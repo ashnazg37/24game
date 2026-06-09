@@ -250,11 +250,15 @@ async function triggerSkip() {
       (cur) => { if (!cur || cur.status !== "active") return; return { ...cur, status:"skipped" }; }
     );
     if (result.committed) {
-      const updates = {};
-      Object.keys(room.players || {}).forEach(uid => {
-        updates[`players/${uid}/roundsPlayed`] = increment(1);
-      });
-      if (Object.keys(updates).length) await update(ref(db), updates);
+      // Only count rounds toward the global leaderboard for 1v1 games.
+      // Room games and practice never touch /players stats.
+      if (room.meta.gameMode === "1v1") {
+        const updates = {};
+        Object.keys(room.players || {}).forEach(uid => {
+          updates[`players/${uid}/roundsPlayed`] = increment(1);
+        });
+        if (Object.keys(updates).length) await update(ref(db), updates);
+      }
     }
   } finally { skipInFlight = false; }
 }

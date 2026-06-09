@@ -31,13 +31,45 @@ onAuthStateChanged(auth, (user) => {
   });
 });
 
-// Copy invite link (just the root URL — anyone can sign in and play)
-document.getElementById("copy-invite-btn").addEventListener("click", () => {
-  navigator.clipboard.writeText(window.location.origin).then(() => {
-    const btn = document.getElementById("copy-invite-btn");
+// ── CLIPBOARD ─────────────────────────────────────────────────
+// navigator.clipboard requires HTTPS + a focused window and can fail silently.
+// The textarea fallback works everywhere.
+function copyText(text, btn, original) {
+  const done = () => {
     btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = "Copy invite link"; }, 2000);
+    setTimeout(() => { btn.textContent = original; }, 2000);
+  };
+  const fail = () => {
+    btn.textContent = "Failed — copy manually";
+    setTimeout(() => { btn.textContent = original; }, 3000);
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done, fail));
+  } else {
+    fallback(text, done, fail);
+  }
+}
+
+function fallback(text, done, fail) {
+  const ta = Object.assign(document.createElement("textarea"), {
+    value: text,
+    style: "position:fixed;opacity:0;top:0;left:0;"
   });
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand("copy") ? done() : fail(); }
+  catch { fail(); }
+  document.body.removeChild(ta);
+}
+
+document.getElementById("copy-invite-btn").addEventListener("click", () => {
+  copyText(window.location.origin, document.getElementById("copy-invite-btn"), "Copy invite link");
+});
+
+document.getElementById("copy-room-link-btn").addEventListener("click", () => {
+  const link = `${window.location.origin}/lobby.html?room=${pendingCode}`;
+  copyText(link, document.getElementById("copy-room-link-btn"), "Copy room link");
 });
 
 // ── HELPERS ──────────────────────────────────────────────────
@@ -191,7 +223,7 @@ async function createRoom(oppUid, oppData) {
 
   await set(ref(db, `rooms/${code}`), {
     meta: { hostUid: currentUser.uid, status: "active", currentRound: 0, createdAt: Date.now(), gameMode: "1v1" },
-    settings: { totalRounds: 10, skipMode: "majority" },
+    settings: { totalRounds: 10, skipMode: "unanimous" },
     players: {
       [currentUser.uid]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL || "", roomScore: 0, online: true, rating: myRating },
       [oppUid]:          { displayName: oppData.displayName,     photoURL: oppData.photoURL || "",     roomScore: 0, online: true, rating: oppData.rating ?? 1200 }

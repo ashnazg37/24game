@@ -21,11 +21,25 @@ onAuthStateChanged(auth, (user) => {
 
 document.getElementById("copy-room-link-btn").addEventListener("click", () => {
   const link = `${window.location.origin}/lobby.html?room=${roomCode}`;
-  navigator.clipboard.writeText(link).then(() => {
-    const btn = document.getElementById("copy-room-link-btn");
-    btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = "Copy link"; }, 2000);
-  });
+  const btn  = document.getElementById("copy-room-link-btn");
+  const original = "Copy link";
+
+  const done = () => { btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = original; }, 2000); };
+  const fail = () => { btn.textContent = "Failed"; setTimeout(() => { btn.textContent = original; }, 2500); };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(link).then(done).catch(() => {
+      const ta = Object.assign(document.createElement("textarea"), { value: link, style: "position:fixed;opacity:0;" });
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand("copy") ? done() : fail(); } catch { fail(); }
+      document.body.removeChild(ta);
+    });
+  } else {
+    const ta = Object.assign(document.createElement("textarea"), { value: link, style: "position:fixed;opacity:0;" });
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy") ? done() : fail(); } catch { fail(); }
+    document.body.removeChild(ta);
+  }
 });
 
 function setupPresence() {
