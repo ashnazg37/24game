@@ -14,7 +14,7 @@ let isHost             = false;
 let room               = null;
 let expr               = "";
 let skipInFlight       = false;
-let autoAdvancePending = false;
+let autoAdvanceTimeout = null;   // cleaner than a pending flag
 let abandonHandled     = false;
 
 // ── BOOT ──────────────────────────────────────────────────────
@@ -77,7 +77,12 @@ function renderGame() {
 
 // ── ACTIVE ROUND ──────────────────────────────────────────────
 function renderActiveRound(round) {
-  skipInFlight = false; // reset every new round
+  skipInFlight = false;
+
+  // Cancel any pending auto-advance from the previous round
+  clearTimeout(autoAdvanceTimeout);
+  autoAdvanceTimeout = null;
+  document.getElementById("auto-advance-msg").style.display = "none";
 
   const nums = Object.values(round.numbers);
   // Only reset expression when puzzle numbers actually changed
@@ -114,20 +119,23 @@ function renderResult(round) {
   document.getElementById("next-round-btn").style.display   = (isHost && !is1v1) ? "inline-block" : "none";
   document.getElementById("waiting-for-host").style.display = (!isHost && !is1v1) ? "block" : "none";
 
-  if (is1v1 && isHost && !autoAdvancePending) {
-    autoAdvancePending = true;
-    let secs = 3;
+  if (is1v1 && isHost) {
+    // Clear and restart on every call — onValue fires several times during score
+    // updates, so we want the countdown to begin after things settle, not start
+    // multiple timers.
+    clearTimeout(autoAdvanceTimeout);
     const msg = document.getElementById("auto-advance-msg");
-    msg.style.display = "block"; msg.textContent = `Next round in ${secs}s…`;
-    const t = setInterval(() => {
-      secs--;
-      if (secs > 0) { msg.textContent = `Next round in ${secs}s…`; }
-      else {
-        clearInterval(t); msg.style.display = "none"; autoAdvancePending = false;
-        const r = currentRound();
-        if (r && r.status !== "active") nextRound();
+    msg.style.display  = "block";
+    msg.textContent    = "Next round in 3s…";
+    autoAdvanceTimeout = setTimeout(async () => {
+      autoAdvanceTimeout = null;
+      msg.style.display  = "none";
+      try {
+        await nextRound();
+      } catch (err) {
+        console.error("Auto-advance failed:", err);
       }
-    }, 1000);
+    }, 3000);
   }
 }
 
