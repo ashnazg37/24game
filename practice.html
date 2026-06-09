@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24 Game — Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .practice-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 20px; max-width:480px; margin:0 auto; }
+
+    .timer-block { width:100%; margin-bottom:24px; }
+    .timer-numbers { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-bottom:10px; }
+    .timer-seconds { font-family:var(--font-display); font-size:5rem; line-height:1; transition:color 0.4s; }
+    .timer-label { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+    .timer-track { width:100%; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .timer-fill  { height:100%; border-radius:3px; transition:width 0.95s linear, background-color 0.4s; background:var(--accent); }
+
+    .stats-row { display:flex; width:100%; margin-bottom:24px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .stat-box  { flex:1; text-align:center; padding:12px 6px; border-right:1px solid var(--border); }
+    .stat-box:last-child { border-right:none; }
+    .stat-value { font-family:var(--font-display); font-size:1.7rem; color:var(--accent); line-height:1; margin-bottom:3px; }
+    .stat-name  { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+
+    .feedback { width:100%; text-align:center; padding:11px; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.95rem; margin-bottom:16px; min-height:44px; transition:opacity 0.3s; }
+    .feedback.correct { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); }
+    .feedback.wrong   { background:rgba(255,77,77,0.08); color:var(--danger); border:1px solid rgba(255,77,77,0.25); }
+    .feedback.timeout { background:rgba(255,170,0,0.08); color:#ffaa00; border:1px solid rgba(255,170,0,0.25); }
+    .feedback.hidden  { opacity:0; pointer-events:none; }
+
+    .time-setting { display:flex; align-items:center; gap:10px; margin-bottom:20px; font-size:0.85rem; color:var(--muted); }
+    .time-setting select { width:auto; padding:6px 10px; font-size:0.85rem; }
+
+    #start-screen { text-align:center; padding:16px 0; }
+    #start-screen h2 { font-family:var(--font-display); font-size:2rem; margin-bottom:6px; }
+    #start-screen p  { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-logo">24</div>
+    <a href="index.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
+  </nav>
+
+  <div class="practice-wrap">
+
+    <!-- START SCREEN -->
+    <div id="start-screen">
+      <h2>Practice Mode</h2>
+      <p>Race against the clock. Make 24 from four numbers using + − × ÷</p>
+      <div class="time-setting">
+        <span>Time per puzzle:</span>
+        <select id="time-limit-select">
+          <option value="30">30 seconds</option>
+          <option value="60" selected>60 seconds</option>
+          <option value="90">90 seconds</option>
+          <option value="0">No limit (stopwatch)</option>
+        </select>
+      </div>
+      <button id="start-btn" class="btn btn-primary" style="max-width:200px;">Start</button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" style="display:none;width:100%;">
+
+      <div class="timer-block">
+        <div class="timer-numbers">
+          <span class="timer-seconds" id="timer-seconds">60</span>
+          <span class="timer-label">sec</span>
+        </div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-value" id="stat-solved">0</div><div class="stat-name">Solved</div></div>
+        <div class="stat-box"><div class="stat-value" id="stat-best">—</div><div class="stat-name">Best</div></div>
+        <div class="stat-box"><div class="stat-value" id="stat-avg">—</div><div class="stat-name">Avg</div></div>
+        <div class="stat-box"><div class="stat-value" id="stat-streak">0</div><div class="stat-name">Streak</div></div>
+      </div>
+
+      <div class="feedback hidden" id="feedback"></div>
+
+      <!-- Number keys -->
+      <div class="keypad-row" id="keypad-numbers"></div>
+
+      <!-- Expression display -->
+      <div class="expr-display" id="expr-display">
+        <span id="expr-text"></span><span class="cursor"></span>
+      </div>
+      <p class="error-msg" id="input-error"></p>
+
+      <!-- Operators -->
+      <div class="keypad-row" style="margin-top:10px;">
+        <button class="key key-op" data-val="+">+</button>
+        <button class="key key-op" data-val="-">−</button>
+        <button class="key key-op" data-val="*">×</button>
+        <button class="key key-op" data-val="/">÷</button>
+      </div>
+
+      <!-- Utility -->
+      <div class="keypad-row">
+        <button class="key key-paren" data-val="(">(</button>
+        <button class="key key-paren" data-val=")">)</button>
+        <button class="key key-back"  id="key-back">⌫</button>
+        <button class="key key-clear" id="key-clear">C</button>
+      </div>
+
+      <div class="action-row" style="margin-top:12px;">
+        <button id="submit-btn" class="btn btn-primary">Submit</button>
+        <button id="skip-btn"   class="btn btn-secondary">Skip</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="practice.js"></script>
+</body>
+</html>

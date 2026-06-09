@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24 Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    @media (max-width: 580px) { .mode-grid { grid-template-columns: 1fr; } }
+    .mode-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+    .idle-state.hidden { display: none; }
+    .searching-state { display: none; text-align: center; padding: 4px 0; }
+    .searching-state.visible { display: block; }
+    .pulse-ring {
+      display: inline-block; width: 44px; height: 44px;
+      border: 3px solid var(--accent); border-radius: 50%;
+      animation: pulse 1.4s ease-in-out infinite; margin-bottom: 12px;
+    }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.18);opacity:0.35} }
+    .searching-text { font-family: var(--font-mono); font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; }
+    .searching-text em { color: var(--accent); font-style: normal; }
+    .join-row { display: flex; gap: 10px; }
+    .join-row input { flex: 1; }
+    .join-row .btn { width: auto; padding: 12px 22px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-logo">24</div>
+    <div class="nav-user">
+      <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
+      <span id="user-name"></span>
+      <button id="sign-out-btn" class="btn btn-ghost">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top:36px;max-width:760px;">
+    <div class="mode-grid">
+
+      <!-- 1v1 -->
+      <div class="card">
+        <p class="mode-label">Quick match</p>
+        <h2 class="card-title" style="margin-bottom:6px;">1v1</h2>
+        <p style="color:var(--muted);font-size:0.87rem;margin-bottom:20px;">Auto-paired with another player. 10 rounds, starts immediately.</p>
+        <div id="idle-state">
+          <button id="find-btn" class="btn btn-primary">Find Opponent</button>
+        </div>
+        <div class="searching-state" id="searching-state">
+          <div class="pulse-ring"></div>
+          <p class="searching-text">Searching for opponent<em id="dots">...</em></p>
+          <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Create Room -->
+      <div class="card">
+        <p class="mode-label">Class / group</p>
+        <h2 class="card-title" style="margin-bottom:6px;">Create Room</h2>
+        <div class="form-group">
+          <label>Room code</label>
+          <div class="room-code" id="preview-code" style="font-size:1.8rem;padding:14px;">——————</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <div class="form-group" style="flex:1;margin-bottom:0;">
+            <label for="total-rounds">Rounds</label>
+            <input type="number" id="total-rounds" value="10" min="1" max="50">
+          </div>
+          <div class="form-group" style="flex:1;margin-bottom:0;">
+            <label for="skip-mode">Skip</label>
+            <select id="skip-mode">
+              <option value="majority">Majority</option>
+              <option value="unanimous">All</option>
+            </select>
+          </div>
+        </div>
+        <button id="create-btn" class="btn btn-primary">Create Room</button>
+      </div>
+
+    </div>
+
+    <!-- Join -->
+    <div class="card">
+      <p class="mode-label">Join a room</p>
+      <div class="join-row">
+        <input type="text" id="join-input" placeholder="ABCD12" maxlength="6" autocomplete="off"
+          style="text-transform:uppercase;letter-spacing:0.15em;font-size:1.3rem;text-align:center;">
+        <button id="join-btn" class="btn btn-secondary">Join</button>
+      </div>
+      <p class="error-msg" id="error-msg"></p>
+    </div>
+
+    <div style="text-align:center;margin-top:22px;display:flex;gap:24px;justify-content:center;">
+      <a href="leaderboard.html" style="color:var(--muted);font-size:0.84rem;text-decoration:none;">Leaderboard →</a>
+      <a href="practice.html"   style="color:var(--accent);font-size:0.84rem;text-decoration:none;">Practice →</a>
+    </div>
+  </div>
+
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>
