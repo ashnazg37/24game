@@ -19,6 +19,25 @@ onAuthStateChanged(auth, (user) => {
   document.getElementById("user-photo").src         = user.photoURL || "";
   pendingCode = generateCode();
   document.getElementById("preview-code").textContent = pendingCode;
+
+  // Live count of players currently in the 1v1 queue
+  onValue(ref(db, "matchmaking/seeking"), (snap) => {
+    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    const el = document.getElementById("waiting-count");
+    if (!el) return;
+    if (count === 0)     el.textContent = "No one waiting yet";
+    else if (count === 1) el.textContent = "1 player waiting for a match";
+    else                  el.textContent = `${count} players waiting for a match`;
+  });
+});
+
+// Copy invite link (just the root URL — anyone can sign in and play)
+document.getElementById("copy-invite-btn").addEventListener("click", () => {
+  navigator.clipboard.writeText(window.location.origin).then(() => {
+    const btn = document.getElementById("copy-invite-btn");
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = "Copy invite link"; }, 2000);
+  });
 });
 
 // ── HELPERS ──────────────────────────────────────────────────

@@ -25,7 +25,10 @@
       </div>
 
       <div class="room-code" id="room-code-display">——————</div>
-      <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Share this code with your class</p>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:20px;">
+        <p style="color:var(--muted);font-size:0.85rem;margin:0;">Share this code with your class</p>
+        <button id="copy-room-link-btn" class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:0.8rem;">Copy link</button>
+      </div>
 
       <p id="player-count" style="color:var(--muted);font-size:0.85rem;margin-bottom:10px;">0 players joined</p>
       <ul class="player-list" id="player-list"></ul>

@@ -44,9 +44,16 @@
       <div class="card">
         <p class="mode-label">Quick match</p>
         <h2 class="card-title" style="margin-bottom:6px;">1v1</h2>
-        <p style="color:var(--muted);font-size:0.87rem;margin-bottom:20px;">Auto-paired with another player. 10 rounds, starts immediately.</p>
+        <p style="color:var(--muted);font-size:0.87rem;margin-bottom:10px;">Auto-paired with another player. 10 rounds, starts immediately.</p>
+
+        <!-- Live waiting count — updates in real time -->
+        <p id="waiting-count" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent);margin-bottom:16px;">
+          — waiting
+        </p>
+
         <div id="idle-state">
           <button id="find-btn" class="btn btn-primary">Find Opponent</button>
+          <button id="copy-invite-btn" class="btn btn-secondary" style="margin-top:8px;">Copy invite link</button>
         </div>
         <div class="searching-state" id="searching-state">
           <div class="pulse-ring"></div>

@@ -19,6 +19,15 @@ onAuthStateChanged(auth, (user) => {
   listenToRoom();
 });
 
+document.getElementById("copy-room-link-btn").addEventListener("click", () => {
+  const link = `${window.location.origin}/lobby.html?room=${roomCode}`;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.getElementById("copy-room-link-btn");
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = "Copy link"; }, 2000);
+  });
+});
+
 function setupPresence() {
   const onlineRef = ref(db, `rooms/${roomCode}/players/${currentUser.uid}/online`);
   set(onlineRef, true);
