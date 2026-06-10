@@ -402,6 +402,71 @@ select option { background:#0d1029; color:var(--text); }
   text-align: center; margin-bottom: 8px;
   min-height: 1.1em;
 }
+/* ── NEW UI FLOW: 2x2 NUMBERS & OP POPUP ── */
+.numbers-grid-container {
+  position: relative;
+  margin-bottom: 12px;
+}
 
+.numbers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.numbers-grid .key-num {
+  height: 90px; 
+  font-size: 2.8rem;
+  border-radius: var(--radius);
+  width: 100%;
+}
+
+.op-popup {
+  position: absolute;
+  inset: 0; /* Ensures the popup completely covers the 2x2 numbers grid perfectly */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(6, 9, 15, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  padding: 8px;
+  z-index: 10;
+  
+  /* Hidden state */
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.op-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.key-op-pop {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  color: var(--accent);
+  font-size: 2.6rem;
+  font-family: var(--font-display);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.key-op-pop:active {
+  transform: scale(0.92);
+  background: var(--surface-2);
+}
+
+.key-op-pop:hover {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: rgba(129, 140, 248, 0.4);
+  box-shadow: 0 0 16px rgba(129, 140, 248, 0.15);
+}
 /* ── ACTION ROW (undo/skip in game + practice) ── */
 .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }

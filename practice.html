@@ -7,212 +7,39 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme = localStorage.getItem("theme") || "dark";</script>
   <style>
-    /* ── PRACTICE LAYOUT ── */
-    .practice-wrap {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 28px 20px; max-width: 480px; margin: 0 auto;
-    }
-
-    /* ── TIMER ── */
-    .timer-block   { width: 100%; margin-bottom: 24px; }
-    .timer-numbers { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-bottom: 12px; }
-    .timer-seconds {
-      font-family: var(--font-display); font-size: 5.5rem; line-height: 1;
-      color: var(--accent); transition: color 0.4s;
-      text-shadow: 0 0 30px var(--accent-glow);
-    }
-    .timer-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
-    .timer-track { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-    .timer-fill  {
-      height: 100%; border-radius: 2px; background: var(--accent);
-      box-shadow: 0 0 12px var(--accent-glow);
-      transition: width 0.95s linear, background-color 0.4s;
-    }
-
-    /* ── STATS ── */
-    .stats-row {
-      display: flex; width: 100%; margin-bottom: 20px;
-      background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-      border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .stat-box       { flex: 1; text-align: center; padding: 14px 6px; border-right: 1px solid var(--border); }
-    .stat-box:last-child { border-right: none; }
-    .stat-value     { font-family: var(--font-display); font-size: 1.7rem; color: var(--cyan); line-height: 1; margin-bottom: 3px; text-shadow: 0 0 14px var(--cyan-glow); }
-    .stat-name      { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.10em; color: var(--muted); }
-
-    /* ── FEEDBACK ── */
-    .feedback {
-      width: 100%; text-align: center; padding: 11px; border-radius: var(--radius-sm);
-      font-family: var(--font-mono); font-size: 0.95rem; margin-bottom: 16px;
-      min-height: 44px; transition: opacity 0.3s;
-    }
-    .feedback.correct { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(129,140,248,0.38); }
-    .feedback.wrong   { background: rgba(248,113,113,0.08); color: var(--danger); border: 1px solid rgba(248,113,113,0.28); }
-    .feedback.timeout { background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.28); }
-    .feedback.hidden  { opacity: 0; pointer-events: none; }
-
-    /* ── START SCREEN ── */
-    .time-setting { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 0.85rem; color: var(--muted); }
-    .time-setting select { width: auto; padding: 6px 10px; font-size: 0.85rem; }
-    #start-screen { text-align: center; padding: 16px 0; }
-    #start-screen h2 {
-      font-family: var(--font-display); font-size: 2.5rem; margin-bottom: 6px;
-      background: linear-gradient(135deg, #818cf8, #c4b5fd 50%, #67e8f9);
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    #start-screen p { color: var(--muted); margin-bottom: 24px; font-size: 0.88rem; }
-
-    /* ── CARD HINT ── */
-    #card-hint {
-      font-size: 0.82rem; color: var(--muted); text-align: center;
-      margin-bottom: 10px; min-height: 1.2em;
-      font-family: var(--font-body);
-    }
-
-    /* ── CARD GRID ──
-       Explicit row/column sizes — no aspect-ratio, no collapsing.
-    ── */
-    #card-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 130px 130px;
-      gap: 10px;
-      width: 100%;
-      margin-bottom: 12px;
-    }
-
-    /* ── BASE CARD ── */
-    .num-card {
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.8rem;
-      cursor: pointer;
-      transition: all 0.18s;
-      border: 2px solid rgba(255,255,255,0.12);
-      position: relative; overflow: hidden;
-      user-select: none; -webkit-user-select: none;
-      box-sizing: border-box;
-    }
-
-    /* Idle — original number, cyan */
-    .num-card-idle {
-      background: rgba(103,232,249,0.15);
-      color: #67e8f9;
-      border-color: rgba(103,232,249,0.55);
-      text-shadow: 0 0 20px rgba(103,232,249,0.6);
-    }
-    .num-card-idle:hover {
-      background: rgba(103,232,249,0.26);
-      border-color: rgba(103,232,249,0.85);
-      transform: translateY(-2px);
-    }
-
-    /* Result — computed value, accent */
-    .num-card-result {
-      background: rgba(129,140,248,0.15);
-      color: #818cf8;
-      border-color: rgba(129,140,248,0.55);
-      text-shadow: 0 0 20px rgba(129,140,248,0.6);
-      font-size: 2.1rem;
-    }
-    .num-card-result:hover {
-      background: rgba(129,140,248,0.26);
-      border-color: rgba(129,140,248,0.85);
-      transform: translateY(-2px);
-    }
-
-    /* Selected — showing operator quadrants */
-    .num-card-ops {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(129,140,248,0.70);
-      box-shadow: 0 0 24px rgba(129,140,248,0.25);
-      padding: 0; cursor: default;
-    }
-
-    /* First operand confirmed — awaiting second */
-    .num-card-pending {
-      background: rgba(129,140,248,0.15);
-      color: #818cf8;
-      border-color: rgba(129,140,248,0.75);
-      text-shadow: 0 0 20px rgba(129,140,248,0.6);
-      flex-direction: column; gap: 2px; font-size: 2.1rem;
-      box-shadow: 0 0 28px rgba(129,140,248,0.28);
-    }
-    .pending-op { font-family: 'Space Mono', monospace; font-size: 0.9rem; opacity: 0.75; }
-
-    /* Pulsing — pick as second operand */
-    .num-card-pick2 {
-      background: rgba(103,232,249,0.15);
-      color: #67e8f9;
-      border-color: rgba(103,232,249,0.55);
-      text-shadow: 0 0 20px rgba(103,232,249,0.6);
-      animation: pick2 0.65s ease-in-out infinite alternate;
-    }
-    .num-card-result.num-card-pick2 {
-      background: rgba(129,140,248,0.15);
-      color: #818cf8;
-      border-color: rgba(129,140,248,0.55);
-      text-shadow: 0 0 20px rgba(129,140,248,0.6);
-      animation: pick2accent 0.65s ease-in-out infinite alternate;
-    }
-    @keyframes pick2 {
-      from { box-shadow: 0 0  8px rgba(103,232,249,0.20); border-color: rgba(103,232,249,0.55); }
-      to   { box-shadow: 0 0 32px rgba(103,232,249,0.55); border-color: rgba(103,232,249,0.95); }
-    }
-    @keyframes pick2accent {
-      from { box-shadow: 0 0  8px rgba(129,140,248,0.20); border-color: rgba(129,140,248,0.55); }
-      to   { box-shadow: 0 0 32px rgba(129,140,248,0.55); border-color: rgba(129,140,248,0.95); }
-    }
-
-    /* Empty slot */
-    .num-card-empty {
-      background: rgba(255,255,255,0.02);
-      border: 2px dashed rgba(255,255,255,0.10);
-      cursor: default; opacity: 0.3;
-    }
-
-    /* Operator 2×2 grid */
-    .op-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100%; height: 100%; }
-    .op-btn  {
-      border: none; background: transparent;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
-      cursor: pointer; color: rgba(255,255,255,0.55);
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.12s, color 0.12s;
-    }
-    .op-btn:nth-child(1) { border-right: 1px solid rgba(255,255,255,0.12); border-bottom: 1px solid rgba(255,255,255,0.12); }
-    .op-btn:nth-child(2) { border-bottom: 1px solid rgba(255,255,255,0.12); }
-    .op-btn:nth-child(3) { border-right: 1px solid rgba(255,255,255,0.12); }
-    .op-btn:hover { background: rgba(129,140,248,0.22); color: #818cf8; }
-
-    /* Error */
-    #input-error {
-      display: none; color: #f87171; font-size: 0.84rem;
-      margin-bottom: 10px; text-align: center;
-      padding: 8px 12px; background: rgba(248,113,113,0.08);
-      border-radius: 8px; border: 1px solid rgba(248,113,113,0.25);
-    }
-
-    /* Action row */
-    .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+    .practice-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 20px; max-width:480px; margin:0 auto; }
+    .timer-block { width:100%; margin-bottom:24px; }
+    .timer-numbers { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-bottom:12px; }
+    .timer-seconds { font-family:var(--font-display); font-size:5.5rem; line-height:1; transition:color 0.4s, text-shadow 0.4s; text-shadow: 0 0 30px var(--accent-glow); }
+    .timer-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); }
+    .timer-track { width:100%; height:4px; background: rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+    .timer-fill { height:100%; border-radius:2px; transition:width 0.95s linear, background-color 0.4s, box-shadow 0.4s; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    .stats-row { display:flex; width:100%; margin-bottom:24px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .stat-box  { flex:1; text-align:center; padding:14px 6px; border-right:1px solid var(--border); }
+    .stat-box:last-child { border-right:none; }
+    .stat-value { font-family:var(--font-display); font-size:1.7rem; color:var(--cyan); line-height:1; margin-bottom:3px; text-shadow: 0 0 14px var(--cyan-glow); }
+    .stat-name  { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.10em; color:var(--muted); }
+    .feedback { width:100%; text-align:center; padding:11px; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.95rem; margin-bottom:16px; min-height:44px; transition:opacity 0.3s; backdrop-filter: var(--blur-sm); }
+    .feedback.correct { background: var(--accent-dim); color: var(--accent); border:1px solid rgba(129,140,248,0.35); box-shadow: 0 0 20px rgba(129,140,248,0.12); text-shadow: 0 0 10px var(--accent-glow); }
+    .feedback.wrong   { background:rgba(248,113,113,0.08); color:var(--danger); border:1px solid rgba(248,113,113,0.25); }
+    .feedback.timeout { background:rgba(251,191,36,0.08); color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
+    .feedback.hidden  { opacity:0; pointer-events:none; }
+    .time-setting { display:flex; align-items:center; gap:10px; margin-bottom:20px; font-size:0.85rem; color:var(--muted); }
+    .time-setting select { width:auto; padding:6px 10px; font-size:0.85rem; }
+    #start-screen { text-align:center; padding:16px 0; }
+    #start-screen h2 { font-family:var(--font-display); font-size:2.5rem; margin-bottom:6px; background: linear-gradient(135deg, #818cf8, #c4b5fd 50%, #67e8f9); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    #start-screen p  { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
   </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-logo">24</div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <a href="index.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
-    </div>
+    <a href="index.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
   </nav>
 
   <div class="practice-wrap">
 
-    <!-- START SCREEN -->
     <div id="start-screen">
       <h2>Practice Mode</h2>
       <p>Race against the clock. Make 24 from four numbers using + − × ÷</p>
@@ -228,7 +55,6 @@
       <button id="start-btn" class="btn btn-primary" style="max-width:200px;">Start</button>
     </div>
 
-    <!-- GAME SCREEN -->
     <div id="game-screen" style="display:none;width:100%;">
 
       <div class="timer-block">
@@ -236,7 +62,7 @@
           <span class="timer-seconds" id="timer-seconds">60</span>
           <span class="timer-label">sec</span>
         </div>
-        <div class="timer-track"><div class="timer-fill" id="timer-fill" style="width:100%;"></div></div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
       </div>
 
       <div class="stats-row">
@@ -248,19 +74,36 @@
 
       <div class="feedback hidden" id="feedback"></div>
 
-      <p id="card-hint">Pick a number</p>
-      <div id="card-grid"></div>
-      <p id="input-error"></p>
+      <div class="numbers-grid-container">
+        <div class="numbers-grid" id="keypad-numbers"></div>
+        <div class="op-popup" id="op-popup">
+          <button class="key key-op-pop key-op" data-val="+">+</button>
+          <button class="key key-op-pop key-op" data-val="-">−</button>
+          <button class="key key-op-pop key-op" data-val="*">×</button>
+          <button class="key key-op-pop key-op" data-val="/">÷</button>
+        </div>
+      </div>
 
-      <div class="action-row">
-        <button id="undo-btn" class="btn btn-secondary">↩ Undo</button>
-        <button id="skip-btn" class="btn btn-secondary">Skip</button>
+      <div class="expr-display" id="expr-display">
+        <span id="expr-text"></span><span class="cursor"></span>
+      </div>
+      <p class="error-msg" id="input-error"></p>
+
+      <div class="keypad-row" style="margin-top:12px;">
+        <button class="key key-paren" data-val="(">(</button>
+        <button class="key key-paren" data-val=")">)</button>
+        <button class="key key-back"  id="key-back">⌫</button>
+        <button class="key key-clear" id="key-clear">C</button>
+      </div>
+
+      <div class="action-row" style="margin-top:12px; display:flex; gap:16px; justify-content:center;">
+        <button id="submit-btn" class="btn btn-primary">Submit</button>
+        <button id="skip-btn"   class="btn btn-secondary">Skip</button>
       </div>
 
     </div>
   </div>
 
   <script type="module" src="practice.js"></script>
-  <script type="module">import { initTheme } from "./utils.js"; initTheme();</script>
 </body>
 </html>
