@@ -26,6 +26,7 @@
     .join-row input { flex: 1; }
     .join-row .btn { width: auto; padding: 12px 22px; }
   </style>
+  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
@@ -33,6 +34,7 @@
     <div class="nav-user">
       <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
       <span id="user-name"></span>
+      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
       <button id="sign-out-btn" class="btn btn-ghost">Sign out</button>
     </div>
   </nav>
@@ -107,5 +109,6 @@
   </div>
 
   <script type="module" src="dashboard.js"></script>
+  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

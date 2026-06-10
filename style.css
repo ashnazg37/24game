@@ -3,19 +3,19 @@
    ============================================================ */
 
 :root {
-  --bg:            #060912;
-  --surface:       rgba(255,255,255,0.05);
-  --surface-2:     rgba(255,255,255,0.08);
-  --border:        rgba(255,255,255,0.10);
-  --border-hi:     rgba(255,255,255,0.20);
+  --bg:            #06090f;
+  --surface:       rgba(255,255,255,0.07);
+  --surface-2:     rgba(255,255,255,0.11);
+  --border:        rgba(255,255,255,0.12);
+  --border-hi:     rgba(255,255,255,0.22);
 
   --accent:        #818cf8;
-  --accent-dim:    rgba(129,140,248,0.12);
-  --accent-glow:   rgba(129,140,248,0.35);
+  --accent-dim:    rgba(129,140,248,0.14);
+  --accent-glow:   rgba(129,140,248,0.40);
 
   --cyan:          #67e8f9;
-  --cyan-dim:      rgba(103,232,249,0.10);
-  --cyan-glow:     rgba(103,232,249,0.30);
+  --cyan-dim:      rgba(103,232,249,0.12);
+  --cyan-glow:     rgba(103,232,249,0.35);
 
   --text:          rgba(255,255,255,0.92);
   --text-2:        rgba(255,255,255,0.60);
@@ -29,8 +29,6 @@
 
   --radius:    14px;
   --radius-sm: 8px;
-  --blur:      blur(22px) saturate(1.4);
-  --blur-sm:   blur(12px) saturate(1.2);
 }
 
 /* ── RESET ── */
@@ -41,22 +39,17 @@ body {
   min-height: 100vh;
   background-color: var(--bg);
   background-image:
-    radial-gradient(ellipse 80% 50% at 15% 25%, rgba(129,140,248,0.08) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 85% 75%, rgba(103,232,249,0.05) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 30% at 50% 60%, rgba(196,181,253,0.04) 0%, transparent 40%);
+    radial-gradient(ellipse 60% 50% at 8%  12%, rgba(129,140,248,0.32) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 92% 88%, rgba(103,232,249,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 30% at 65% 42%, rgba(196,181,253,0.14) 0%, transparent 50%),
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0);
+  background-size: auto, auto, auto, 28px 28px;
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;
   position: relative;
-}
-
-/* Subtle dot-grid overlay — gives depth to the dark background */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 28px 28px;
 }
 
 /* ── LAYOUT ── */

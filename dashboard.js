@@ -31,37 +31,8 @@ onAuthStateChanged(auth, (user) => {
   });
 });
 
-// ── CLIPBOARD ─────────────────────────────────────────────────
-// navigator.clipboard requires HTTPS + a focused window and can fail silently.
-// The textarea fallback works everywhere.
-function copyText(text, btn, original) {
-  const done = () => {
-    btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = original; }, 2000);
-  };
-  const fail = () => {
-    btn.textContent = "Failed — copy manually";
-    setTimeout(() => { btn.textContent = original; }, 3000);
-  };
-
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done, fail));
-  } else {
-    fallback(text, done, fail);
-  }
-}
-
-function fallback(text, done, fail) {
-  const ta = Object.assign(document.createElement("textarea"), {
-    value: text,
-    style: "position:fixed;opacity:0;top:0;left:0;"
-  });
-  document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  try { document.execCommand("copy") ? done() : fail(); }
-  catch { fail(); }
-  document.body.removeChild(ta);
-}
+// ── CLIPBOARD (via shared utils.js) ──────────────────────────
+import { copyText } from "./utils.js";
 
 document.getElementById("copy-invite-btn").addEventListener("click", () => {
   copyText(window.location.origin, document.getElementById("copy-invite-btn"), "Copy invite link");

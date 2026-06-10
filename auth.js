@@ -6,16 +6,16 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const ALLOWED_DOMAIN = "gmail.com";
+const ALLOWED_DOMAIN = "stjohnscollege.co.za";
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const domain = user.email?.split("@")[1];
-  // if (domain !== ALLOWED_DOMAIN) {
-  //   await signOut(auth);
-  //   showError(`Only @${ALLOWED_DOMAIN} accounts can sign in.`);
-  //   return;
-  // }
+  if (domain !== ALLOWED_DOMAIN) {
+    await signOut(auth);
+    showError(`Only @${ALLOWED_DOMAIN} accounts can sign in.`);
+    return;
+  }
   window.location.href = "dashboard.html";
 });
 
