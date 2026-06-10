@@ -3,19 +3,29 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/f
 import {
   ref, onValue, runTransaction, update, get, set, increment, remove, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { validateExpression } from "./validator.js";
 import { getRandomSolvablePuzzle } from "./solver.js";
 
+// ── FIREBASE STATE ─────────────────────────────────────────────
 const roomCode = new URLSearchParams(window.location.search).get("room");
 if (!roomCode) window.location.href = "dashboard.html";
 
 let currentUser        = null;
 let isHost             = false;
 let room               = null;
-let expr               = "";
 let skipInFlight       = false;
-let autoAdvanceTimeout = null;   // cleaner than a pending flag
+let autoAdvanceTimeout = null;
 let abandonHandled     = false;
+
+// ── CARD STATE (local, reset each round) ──────────────────────
+// cards: [{ value, expr, used, isResult }]
+// - value:    number (current value, may be a computed fraction)
+// - expr:     display string e.g. "(4 × 6)"
+// - used:     true once consumed in a combination
+// - isResult: true if this card is a computed result (vs original number)
+let cards        = [];
+let selectedIdx  = null;   // index of first card chosen
+let selectedOp   = null;   // operator chosen after first card
+let cardHistory  = [];     // stack of previous card arrays for undo
 
 // ── BOOT ──────────────────────────────────────────────────────
 onAuthStateChanged(auth, (user) => {
@@ -52,10 +62,8 @@ function renderGame() {
     `Round ${room.meta.currentRound + 1} / ${room.settings.totalRounds}`;
   document.getElementById("resign-btn").textContent = is1v1 ? "Resign" : "Leave Room";
 
-  // ── Abandonment detection (1v1 only) ──────────────────────
   if (is1v1 && room.meta.status === "active" && !abandonHandled) {
-    const onlineUids = Object.entries(room.players || {})
-      .filter(([, p]) => p.online).map(([uid]) => uid);
+    const onlineUids = Object.entries(room.players || {}).filter(([,p]) => p.online).map(([uid]) => uid);
     if (onlineUids.length === 1 && onlineUids[0] === currentUser.uid) {
       const abandonerUid = Object.keys(room.players || {}).find(uid => uid !== currentUser.uid);
       if (abandonerUid) { abandonHandled = true; handleAbandonment(abandonerUid); return; }
@@ -71,31 +79,26 @@ function renderGame() {
   const round = currentRound();
   if (!round) return;
 
-  if (round.status === "active") { showView("round-view"); renderActiveRound(round); }
-  else                           { showView("result-view"); renderResult(round); }
+  if (round.status === "active") {
+    showView("round-view");
+    renderActiveRound(round);
+  } else {
+    showView("result-view");
+    renderResult(round);
+  }
 }
 
 // ── ACTIVE ROUND ──────────────────────────────────────────────
 function renderActiveRound(round) {
   skipInFlight = false;
 
-  // Cancel any pending auto-advance from the previous round
-  clearTimeout(autoAdvanceTimeout);
-  autoAdvanceTimeout = null;
-  document.getElementById("auto-advance-msg").style.display = "none";
-
-  const nums = Object.values(round.numbers);
-  // Only reset expression when puzzle numbers actually changed
-  const numKey = nums.join(",");
+  // Re-init cards only when puzzle numbers change (i.e. new round)
+  const nums     = Object.values(round.numbers);
+  const numKey   = nums.join(",");
   if (window._lastNumKey !== numKey) {
-    window._lastNumKey = numKey; expr = ""; updateExprDisplay(); clearInputError();
+    window._lastNumKey = numKey;
+    initCards(nums);
   }
-
-  document.getElementById("keypad-numbers").innerHTML = nums
-    .map(n => `<button class="key key-num" data-val="${n}">${n}</button>`).join("");
-  document.querySelectorAll(".key-num").forEach(btn =>
-    btn.addEventListener("click", () => appendToExpr(btn.dataset.val))
-  );
 
   const onlineCount = Object.values(room.players || {}).filter(p => p.online).length;
   const needed = room.settings.skipMode === "unanimous" ? onlineCount : Math.ceil(onlineCount / 2);
@@ -107,7 +110,7 @@ function renderActiveRound(round) {
   if (round.status === "active" && needed > 0 && votes >= needed) triggerSkip();
 }
 
-// ── RESULT VIEW ───────────────────────────────────────────────
+// ── RESULT / END VIEWS (unchanged) ────────────────────────────
 function renderResult(round) {
   const el = document.getElementById("result-content");
   if (round.status === "solved") {
@@ -119,37 +122,25 @@ function renderResult(round) {
   document.getElementById("next-round-btn").style.display   = (isHost && !is1v1) ? "inline-block" : "none";
   document.getElementById("waiting-for-host").style.display = (!isHost && !is1v1) ? "block" : "none";
 
-  if (is1v1 && isHost) {
-    // Clear and restart on every call — onValue fires several times during score
-    // updates, so we want the countdown to begin after things settle, not start
-    // multiple timers.
+  if (is1v1 && isHost && !autoAdvanceTimeout) {
     clearTimeout(autoAdvanceTimeout);
     const msg = document.getElementById("auto-advance-msg");
-    msg.style.display  = "block";
-    msg.textContent    = "Next round in 3s…";
+    msg.style.display = "block"; msg.textContent = "Next round in 3s…";
     autoAdvanceTimeout = setTimeout(async () => {
-      autoAdvanceTimeout = null;
-      msg.style.display  = "none";
-      try {
-        await nextRound();
-      } catch (err) {
-        console.error("Auto-advance failed:", err);
-      }
+      autoAdvanceTimeout = null; msg.style.display = "none";
+      try { await nextRound(); } catch(e) { console.error("Auto-advance failed:", e); }
     }, 3000);
   }
 }
 
-// ── END SCREEN ────────────────────────────────────────────────
 function renderEndScreen() {
   const isAbandoned = room.meta.status === "abandoned";
   document.getElementById("end-title").textContent = isAbandoned ? "Game Ended" : "Game Over";
-  const msg = document.getElementById("abandon-msg");
+  const abandonMsg = document.getElementById("abandon-msg");
   if (isAbandoned) {
-    const wasMe = room.meta.abandonedBy === currentUser.uid;
-    msg.textContent = wasMe ? "You resigned." : `${room.meta.abandonedName || "Opponent"} left the game.`;
-    msg.style.display = "block";
-  } else { msg.style.display = "none"; }
-
+    abandonMsg.textContent  = room.meta.abandonedBy === currentUser.uid ? "You resigned." : `${room.meta.abandonedName || "Opponent"} left the game.`;
+    abandonMsg.style.display = "block";
+  } else { abandonMsg.style.display = "none"; }
   const sorted = Object.entries(room.players || {}).sort(([,a],[,b]) => b.roomScore - a.roomScore);
   document.getElementById("final-scores").innerHTML = sorted.map(([uid, p], i) => `
     <div class="final-player ${uid === currentUser.uid ? "is-you" : ""}">
@@ -160,11 +151,9 @@ function renderEndScreen() {
     </div>`).join("");
 }
 
-// ── SIDEBARS ──────────────────────────────────────────────────
 function renderSidebars() {
   const players = Object.entries(room.players || {}).filter(([,p]) => p.online);
   const is1v1   = room.meta.gameMode === "1v1";
-
   document.getElementById("room-leaderboard").innerHTML = [...players]
     .sort(([,a],[,b]) => b.roomScore - a.roomScore)
     .map(([uid, p]) => `
@@ -174,10 +163,8 @@ function renderSidebars() {
         <span class="player-score">${p.roomScore}</span>
       </li>`).join("");
 
-  // ELO sidebar only shown in 1v1
   const eloSection = document.getElementById("elo-section");
   if (eloSection) eloSection.style.display = is1v1 ? "block" : "none";
-
   if (is1v1) {
     document.getElementById("elo-list").innerHTML = [...players]
       .sort(([,a],[,b]) => (b.rating??1200)-(a.rating??1200))
@@ -189,45 +176,163 @@ function renderSidebars() {
   }
 }
 
-// ── KEYPAD ────────────────────────────────────────────────────
-function appendToExpr(val) { expr += val; updateExprDisplay(); clearInputError(); }
-function backspace()        { expr = expr.slice(0,-1); updateExprDisplay(); }
-function clearExpr()        { expr = ""; updateExprDisplay(); clearInputError(); }
-function updateExprDisplay() {
-  document.getElementById("expr-text").textContent = expr.replace(/\*/g,"×").replace(/\//g,"÷");
-  document.getElementById("expr-display").classList.toggle("has-content", expr.length > 0);
+// ═══════════════════════════════════════════════════════════════
+//  CARD COMBINATION LOGIC
+// ═══════════════════════════════════════════════════════════════
+
+function initCards(numbers) {
+  cards       = numbers.map((n, i) => ({ id: i, value: n, expr: String(n), used: false, isResult: false }));
+  selectedIdx = null;
+  selectedOp  = null;
+  cardHistory = [];
+  clearInputError();
+  renderCards();
 }
 
-document.querySelectorAll(".key-op").forEach(btn    => btn.addEventListener("click", () => appendToExpr(btn.dataset.val)));
-document.querySelectorAll(".key-paren").forEach(btn => btn.addEventListener("click", () => appendToExpr(btn.dataset.val)));
-document.getElementById("key-back").addEventListener("click",  backspace);
-document.getElementById("key-clear").addEventListener("click", clearExpr);
+function renderCards() {
+  const grid = document.getElementById("card-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
 
-window.addEventListener("keydown", (e) => {
-  const round = currentRound();
-  if (!round || round.status !== "active") return;
-  if (e.key === "Backspace")              { e.preventDefault(); backspace(); }
-  else if (e.key === "Enter")             { handleSubmit(); }
-  else if (e.key === "Escape")            { clearExpr(); }
-  else if (/^[\d+\-*/().]$/.test(e.key)) { appendToExpr(e.key); }
-});
+  const hint = document.getElementById("card-hint");
 
-// ── SUBMIT ────────────────────────────────────────────────────
-document.getElementById("submit-btn").addEventListener("click", handleSubmit);
+  cards.forEach((card, i) => {
+    const div = document.createElement("div");
+    div.className = "num-card";
 
-async function handleSubmit() {
-  const round = currentRound();
-  if (!round || round.status !== "active") return;
-  const check = validateExpression(expr, Object.values(round.numbers));
-  if (!check.valid) { showInputError(check.message); return; }
+    if (card.used) {
+      // Empty slot
+      div.classList.add("num-card-empty");
+
+    } else if (i === selectedIdx && selectedOp === null) {
+      // This card was tapped — show operator quadrants
+      div.classList.add("num-card-ops");
+      div.innerHTML = `
+        <div class="op-grid">
+          <button class="op-btn" data-op="+">+</button>
+          <button class="op-btn" data-op="−">−</button>
+          <button class="op-btn" data-op="×">×</button>
+          <button class="op-btn" data-op="÷">÷</button>
+        </div>`;
+      div.querySelectorAll(".op-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => { e.stopPropagation(); selectOp(btn.dataset.op); });
+      });
+      // Tapping again deselects
+      div.addEventListener("click", () => { selectedIdx = null; selectedOp = null; renderCards(); });
+
+    } else if (i === selectedIdx && selectedOp !== null) {
+      // Pending — first operand confirmed, showing the chosen op
+      div.classList.add("num-card-pending");
+      div.innerHTML = `
+        <span>${formatVal(card.value)}</span>
+        <span class="pending-op">${selectedOp}</span>`;
+
+    } else if (selectedOp !== null) {
+      div.classList.add("num-card-pick2");
+      if (card.isResult) div.classList.add("num-card-result");
+      div.textContent = formatVal(card.value);
+      div.addEventListener("click", () => combineCards(i));
+
+    } else {
+      // Normal idle card
+      div.classList.add(card.isResult ? "num-card-result" : "num-card-idle");
+      div.textContent = formatVal(card.value);
+      div.addEventListener("click", () => selectCard(i));
+    }
+
+    grid.appendChild(div);
+  });
+
+  // Update hint text
+  if (hint) {
+    if (selectedIdx === null)          hint.textContent = "Pick a number";
+    else if (selectedOp === null)       hint.textContent = "Choose an operation";
+    else                                hint.textContent = "Pick a second number";
+  }
+}
+
+function selectCard(idx) {
+  if (cards[idx].used) return;
+  selectedIdx = idx;
+  selectedOp  = null;
+  clearInputError();
+  renderCards();
+}
+
+// Map display symbols back to real operators for calculation
+const OP_MAP = { "+": "+", "−": "-", "×": "*", "÷": "/" };
+
+function selectOp(op) {
+  selectedOp = op;
+  renderCards();
+}
+
+function combineCards(bIdx) {
+  if (selectedIdx === null || selectedOp === null) return;
+  if (bIdx === selectedIdx) return;
+
+  const a   = cards[selectedIdx];
+  const b   = cards[bIdx];
+  const raw = OP_MAP[selectedOp];
+
+  let result;
+  if (raw === "+")      result = a.value + b.value;
+  else if (raw === "-") result = a.value - b.value;
+  else if (raw === "*") result = a.value * b.value;
+  else {
+    if (Math.abs(b.value) < 1e-12) { showInputError("Can't divide by zero"); return; }
+    result = a.value / b.value;
+  }
+
+  if (!isFinite(result)) { showInputError("Invalid operation"); return; }
+
+  // Save state for undo
+  cardHistory.push(JSON.parse(JSON.stringify(cards)));
+
+  const newExpr = `(${a.expr} ${selectedOp} ${b.expr})`;
+  cards[selectedIdx] = { ...a, value: result, expr: newExpr, isResult: true };
+  cards[bIdx]        = { ...b, used: true };
+
+  selectedIdx = null;
+  selectedOp  = null;
   clearInputError();
 
+  const remaining = cards.filter(c => !c.used);
+  if (remaining.length === 1) {
+    checkWin(remaining[0]);
+  } else {
+    renderCards();
+  }
+}
+
+function checkWin(card) {
+  if (Math.abs(card.value - 24) < 1e-9) {
+    // Build a clean expression for display (already built in card.expr)
+    autoSubmit(card.expr);
+  } else {
+    renderCards();
+    showInputError(`Result is ${parseFloat(card.value.toFixed(4))}, not 24 — ↩ undo and try again`);
+  }
+}
+
+// ── UNDO ──────────────────────────────────────────────────────
+document.getElementById("undo-btn").addEventListener("click", () => {
+  if (cardHistory.length === 0) return;
+  cards       = cardHistory.pop();
+  selectedIdx = null;
+  selectedOp  = null;
+  clearInputError();
+  renderCards();
+});
+
+// ── AUTO-SUBMIT ───────────────────────────────────────────────
+async function autoSubmit(solution) {
   const result = await runTransaction(
     ref(db, `rooms/${roomCode}/rounds/${room.meta.currentRound}`),
     (cur) => {
       if (!cur || cur.status !== "active") return;
-      return { ...cur, status:"solved", winnerId:currentUser.uid,
-               winnerName:currentUser.displayName, solution:expr, solvedAt:Date.now() };
+      return { ...cur, status: "solved", winnerId: currentUser.uid,
+               winnerName: currentUser.displayName, solution, solvedAt: Date.now() };
     }
   );
   if (result.committed) await resolveWin(currentUser.uid);
@@ -247,18 +352,12 @@ async function triggerSkip() {
   try {
     const result = await runTransaction(
       ref(db, `rooms/${roomCode}/rounds/${room.meta.currentRound}`),
-      (cur) => { if (!cur || cur.status !== "active") return; return { ...cur, status:"skipped" }; }
+      (cur) => { if (!cur || cur.status !== "active") return; return { ...cur, status: "skipped" }; }
     );
-    if (result.committed) {
-      // Only count rounds toward the global leaderboard for 1v1 games.
-      // Room games and practice never touch /players stats.
-      if (room.meta.gameMode === "1v1") {
-        const updates = {};
-        Object.keys(room.players || {}).forEach(uid => {
-          updates[`players/${uid}/roundsPlayed`] = increment(1);
-        });
-        if (Object.keys(updates).length) await update(ref(db), updates);
-      }
+    if (result.committed && room.meta.gameMode === "1v1") {
+      const updates = {};
+      Object.keys(room.players || {}).forEach(uid => { updates[`players/${uid}/roundsPlayed`] = increment(1); });
+      if (Object.keys(updates).length) await update(ref(db), updates);
     }
   } finally { skipInFlight = false; }
 }
@@ -270,13 +369,13 @@ async function nextRound() {
   if (!isHost) return;
   const next  = room.meta.currentRound + 1;
   const total = room.settings.totalRounds;
-  if (next >= total) { await update(ref(db, `rooms/${roomCode}/meta`), { status:"finished" }); return; }
+  if (next >= total) { await update(ref(db, `rooms/${roomCode}/meta`), { status: "finished" }); return; }
   const numbers = getRandomSolvablePuzzle();
   await update(ref(db), {
     [`rooms/${roomCode}/meta/currentRound`]: next,
     [`rooms/${roomCode}/rounds/${next}`]: {
-      numbers, status:"active", startedAt:Date.now(),
-      winnerId:null, winnerName:null, solution:null, skipVotes:{}
+      numbers, status: "active", startedAt: Date.now(),
+      winnerId: null, winnerName: null, solution: null, skipVotes: {}
     }
   });
 }
@@ -303,8 +402,7 @@ async function handleAbandonment(abandonerUid) {
   await resolveWin(currentUser.uid);
 }
 
-// ── WIN RESOLUTION ────────────────────────────────────────────
-// ELO is only applied in 1v1 games. Room games show scores but don't affect ratings.
+// ── WIN RESOLUTION + ELO ──────────────────────────────────────
 async function resolveWin(winnerId) {
   const players = room.players || {};
   const allUids = Object.keys(players);
@@ -316,25 +414,20 @@ async function resolveWin(winnerId) {
     const ratings = {};
     allUids.forEach((uid, i) => { ratings[uid] = reads[i].val() ?? 1200; });
     const changes = eloChanges(ratings, winnerId, allUids);
-
     allUids.forEach(uid => {
       const newRating = Math.max(100, ratings[uid] + changes[uid]);
-      updates[`players/${uid}/rating`]                    = newRating;
-      updates[`rooms/${roomCode}/players/${uid}/rating`]  = newRating;
-      updates[`players/${uid}/roundsPlayed`]              = increment(1);
+      updates[`players/${uid}/rating`]                   = newRating;
+      updates[`rooms/${roomCode}/players/${uid}/rating`] = newRating;
+      updates[`players/${uid}/roundsPlayed`]             = increment(1);
     });
     updates[`players/${winnerId}/wins`] = increment(1);
   }
 
-  // Always update room score
   updates[`rooms/${roomCode}/players/${winnerId}/roomScore`] = increment(1);
-
   if (Object.keys(updates).length) await update(ref(db), updates);
 }
 
-// ── ELO ───────────────────────────────────────────────────────
 function expected(rA, rB) { return 1 / (1 + Math.pow(10, (rB - rA) / 400)); }
-
 function eloChanges(ratings, winnerId, uids, K = 32) {
   const d = {};
   uids.forEach(uid => { d[uid] = 0; });
@@ -350,6 +443,18 @@ function eloChanges(ratings, winnerId, uids, K = 32) {
 
 // ── UTILITIES ─────────────────────────────────────────────────
 function currentRound() { return room?.rounds?.[room.meta.currentRound] ?? null; }
-function showView(id)   { ["round-view","result-view","end-view"].forEach(v => document.getElementById(v).style.display = v===id?"block":"none"); }
-function showInputError(msg) { const el=document.getElementById("input-error"); el.textContent=msg; el.style.display="block"; }
-function clearInputError()   { const el=document.getElementById("input-error"); el.textContent=""; el.style.display="none"; }
+
+// Format a card value: show fractions neatly, avoid floating-point noise
+function formatVal(v) {
+  if (Number.isInteger(v)) return String(v);
+  const r = parseFloat(v.toFixed(3));
+  return String(r);
+}
+
+function showView(id) {
+  ["round-view", "result-view", "end-view"].forEach(v =>
+    document.getElementById(v).style.display = v === id ? "block" : "none"
+  );
+}
+function showInputError(msg) { const el = document.getElementById("input-error"); el.textContent = msg; el.style.display = "block"; }
+function clearInputError()   { const el = document.getElementById("input-error"); el.textContent = ""; el.style.display = "none"; }

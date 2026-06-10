@@ -9,81 +9,35 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .practice-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 20px; max-width:480px; margin:0 auto; }
-
     .timer-block { width:100%; margin-bottom:24px; }
     .timer-numbers { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-bottom:12px; }
-    .timer-seconds {
-      font-family:var(--font-display); font-size:5.5rem; line-height:1;
-      transition:color 0.4s, text-shadow 0.4s;
-      text-shadow: 0 0 30px var(--accent-glow);
-    }
+    .timer-seconds { font-family:var(--font-display); font-size:5.5rem; line-height:1; transition:color 0.4s, text-shadow 0.4s; color:var(--accent); text-shadow:0 0 30px var(--accent-glow); }
     .timer-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); }
-    .timer-track {
-      width:100%; height:4px;
-      background: rgba(255,255,255,0.08);
-      border-radius:2px; overflow:hidden;
-    }
-    .timer-fill {
-      height:100%; border-radius:2px;
-      transition:width 0.95s linear, background-color 0.4s, box-shadow 0.4s;
-      background: var(--accent);
-      box-shadow: 0 0 12px var(--accent-glow);
-    }
-
-    .stats-row {
-      display:flex; width:100%; margin-bottom:24px;
-      background: var(--surface);
-      backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-      border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
-    }
-    .stat-box  { flex:1; text-align:center; padding:14px 6px; border-right:1px solid var(--border); }
+    .timer-track { width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+    .timer-fill  { height:100%; border-radius:2px; background:var(--accent); box-shadow:0 0 12px var(--accent-glow); transition:width 0.95s linear, background-color 0.4s, box-shadow 0.4s; }
+    .stats-row   { display:flex; width:100%; margin-bottom:20px; background:var(--surface); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08); }
+    .stat-box    { flex:1; text-align:center; padding:14px 6px; border-right:1px solid var(--border); }
     .stat-box:last-child { border-right:none; }
-    .stat-value {
-      font-family:var(--font-display); font-size:1.7rem;
-      color:var(--cyan); line-height:1; margin-bottom:3px;
-      text-shadow: 0 0 14px var(--cyan-glow);
-    }
-    .stat-name  { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.10em; color:var(--muted); }
-
-    .feedback {
-      width:100%; text-align:center; padding:11px;
-      border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.95rem;
-      margin-bottom:16px; min-height:44px; transition:opacity 0.3s;
-      backdrop-filter: var(--blur-sm);
-    }
-    .feedback.correct {
-      background: var(--accent-dim); color: var(--accent);
-      border:1px solid rgba(129,140,248,0.35);
-      box-shadow: 0 0 20px rgba(129,140,248,0.12);
-      text-shadow: 0 0 10px var(--accent-glow);
-    }
-    .feedback.wrong   {
-      background:rgba(248,113,113,0.08); color:var(--danger);
-      border:1px solid rgba(248,113,113,0.25);
-    }
-    .feedback.timeout {
-      background:rgba(251,191,36,0.08); color:#fbbf24;
-      border:1px solid rgba(251,191,36,0.25);
-    }
+    .stat-value  { font-family:var(--font-display); font-size:1.7rem; color:var(--cyan); line-height:1; margin-bottom:3px; text-shadow:0 0 14px var(--cyan-glow); }
+    .stat-name   { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.10em; color:var(--muted); }
+    .feedback    { width:100%; text-align:center; padding:11px; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.95rem; margin-bottom:16px; min-height:44px; transition:opacity 0.3s; backdrop-filter:var(--blur-sm); }
+    .feedback.correct { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(129,140,248,0.38); box-shadow:0 0 20px rgba(129,140,248,0.14); }
+    .feedback.wrong   { background:rgba(248,113,113,0.08); color:var(--danger); border:1px solid rgba(248,113,113,0.28); }
+    .feedback.timeout { background:rgba(251,191,36,0.08); color:#fbbf24; border:1px solid rgba(251,191,36,0.28); }
     .feedback.hidden  { opacity:0; pointer-events:none; }
-
     .time-setting { display:flex; align-items:center; gap:10px; margin-bottom:20px; font-size:0.85rem; color:var(--muted); }
     .time-setting select { width:auto; padding:6px 10px; font-size:0.85rem; }
-
     #start-screen { text-align:center; padding:16px 0; }
-    #start-screen h2 {
-      font-family:var(--font-display); font-size:2.5rem; margin-bottom:6px;
-      background: linear-gradient(135deg, #818cf8, #c4b5fd 50%, #67e8f9);
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    #start-screen p  { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
+    #start-screen h2 { font-family:var(--font-display); font-size:2.5rem; margin-bottom:6px; background:linear-gradient(135deg,#818cf8,#c4b5fd 50%,#67e8f9); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    #start-screen p { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
   </style>
+  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-logo">24</div>
     <a href="index.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
+    <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
   </nav>
 
   <div class="practice-wrap">
@@ -124,39 +78,23 @@
 
       <div class="feedback hidden" id="feedback"></div>
 
-      <!-- Number keys -->
-      <div class="keypad-row" id="keypad-numbers"></div>
+      <!-- Card hint -->
+      <p class="card-hint" id="card-hint">Pick a number</p>
 
-      <!-- Expression display -->
-      <div class="expr-display" id="expr-display">
-        <span id="expr-text"></span><span class="cursor"></span>
-      </div>
+      <!-- 2×2 card grid -->
+      <div class="card-grid" id="card-grid"></div>
+
       <p class="error-msg" id="input-error"></p>
 
-      <!-- Operators -->
-      <div class="keypad-row" style="margin-top:10px;">
-        <button class="key key-op" data-val="+">+</button>
-        <button class="key key-op" data-val="-">−</button>
-        <button class="key key-op" data-val="*">×</button>
-        <button class="key key-op" data-val="/">÷</button>
-      </div>
-
-      <!-- Utility -->
-      <div class="keypad-row">
-        <button class="key key-paren" data-val="(">(</button>
-        <button class="key key-paren" data-val=")">)</button>
-        <button class="key key-back"  id="key-back">⌫</button>
-        <button class="key key-clear" id="key-clear">C</button>
-      </div>
-
-      <div class="action-row" style="margin-top:12px; display:flex; gap:16px; justify-content:center;">
-        <button id="submit-btn" class="btn btn-primary">Submit</button>
-        <button id="skip-btn"   class="btn btn-secondary">Skip</button>
+      <div class="action-row">
+        <button id="undo-btn" class="btn btn-secondary">↩ Undo</button>
+        <button id="skip-btn" class="btn btn-secondary">Skip</button>
       </div>
 
     </div>
   </div>
 
   <script type="module" src="practice.js"></script>
+  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>
