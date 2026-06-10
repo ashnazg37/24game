@@ -194,7 +194,7 @@ async function createRoom(oppUid, oppData) {
 
   await set(ref(db, `rooms/${code}`), {
     meta: { hostUid: currentUser.uid, status: "active", currentRound: 0, createdAt: Date.now(), gameMode: "1v1" },
-    settings: { totalRounds: 3, skipMode: "unanimous" },
+    settings: { totalRounds: 10, skipMode: "unanimous" },
     players: {
       [currentUser.uid]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL || "", roomScore: 0, online: true, rating: myRating },
       [oppUid]:          { displayName: oppData.displayName,     photoURL: oppData.photoURL || "",     roomScore: 0, online: true, rating: oppData.rating ?? 1200 }

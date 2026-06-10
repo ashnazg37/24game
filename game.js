@@ -14,7 +14,7 @@ let isHost             = false;
 let room               = null;
 let expr               = "";
 let skipInFlight       = false;
-let autoAdvanceTimeout = null;
+let autoAdvanceTimeout = null;   // cleaner than a pending flag
 let abandonHandled     = false;
 
 // ── BOOT ──────────────────────────────────────────────────────
@@ -52,6 +52,7 @@ function renderGame() {
     `Round ${room.meta.currentRound + 1} / ${room.settings.totalRounds}`;
   document.getElementById("resign-btn").textContent = is1v1 ? "Resign" : "Leave Room";
 
+  // ── Abandonment detection (1v1 only) ──────────────────────
   if (is1v1 && room.meta.status === "active" && !abandonHandled) {
     const onlineUids = Object.entries(room.players || {})
       .filter(([, p]) => p.online).map(([uid]) => uid);
@@ -77,11 +78,14 @@ function renderGame() {
 // ── ACTIVE ROUND ──────────────────────────────────────────────
 function renderActiveRound(round) {
   skipInFlight = false;
+
+  // Cancel any pending auto-advance from the previous round
   clearTimeout(autoAdvanceTimeout);
   autoAdvanceTimeout = null;
   document.getElementById("auto-advance-msg").style.display = "none";
 
   const nums = Object.values(round.numbers);
+  // Only reset expression when puzzle numbers actually changed
   const numKey = nums.join(",");
   if (window._lastNumKey !== numKey) {
     window._lastNumKey = numKey; expr = ""; updateExprDisplay(); clearInputError();
@@ -116,6 +120,9 @@ function renderResult(round) {
   document.getElementById("waiting-for-host").style.display = (!isHost && !is1v1) ? "block" : "none";
 
   if (is1v1 && isHost) {
+    // Clear and restart on every call — onValue fires several times during score
+    // updates, so we want the countdown to begin after things settle, not start
+    // multiple timers.
     clearTimeout(autoAdvanceTimeout);
     const msg = document.getElementById("auto-advance-msg");
     msg.style.display  = "block";
@@ -123,7 +130,11 @@ function renderResult(round) {
     autoAdvanceTimeout = setTimeout(async () => {
       autoAdvanceTimeout = null;
       msg.style.display  = "none";
-      try { await nextRound(); } catch (err) { console.error("Auto-advance failed:", err); }
+      try {
+        await nextRound();
+      } catch (err) {
+        console.error("Auto-advance failed:", err);
+      }
     }, 3000);
   }
 }
@@ -163,6 +174,7 @@ function renderSidebars() {
         <span class="player-score">${p.roomScore}</span>
       </li>`).join("");
 
+  // ELO sidebar only shown in 1v1
   const eloSection = document.getElementById("elo-section");
   if (eloSection) eloSection.style.display = is1v1 ? "block" : "none";
 
@@ -179,30 +191,13 @@ function renderSidebars() {
 
 // ── KEYPAD ────────────────────────────────────────────────────
 function appendToExpr(val) { expr += val; updateExprDisplay(); clearInputError(); }
-
-// Fix: regex identifies entire final token (e.g. "12", "+", "(") and deletes it
-function backspace() { 
-  expr = expr.replace(/(\d+|[+\-*/()])$/, ''); 
-  updateExprDisplay(); 
-}
-
-function clearExpr() { expr = ""; updateExprDisplay(); clearInputError(); }
-
-function updatePopupState() {
-  const popup = document.getElementById("op-popup");
-  if (!popup) return;
-  // If last character is a digit or closing bracket, show ops
-  const expectsOperator = /[\d)]$/.test(expr.trim());
-  popup.classList.toggle("visible", expectsOperator);
-}
-
+function backspace()        { expr = expr.slice(0,-1); updateExprDisplay(); }
+function clearExpr()        { expr = ""; updateExprDisplay(); clearInputError(); }
 function updateExprDisplay() {
   document.getElementById("expr-text").textContent = expr.replace(/\*/g,"×").replace(/\//g,"÷");
   document.getElementById("expr-display").classList.toggle("has-content", expr.length > 0);
-  updatePopupState();
 }
 
-// Event Listeners for statically rendered keys
 document.querySelectorAll(".key-op").forEach(btn    => btn.addEventListener("click", () => appendToExpr(btn.dataset.val)));
 document.querySelectorAll(".key-paren").forEach(btn => btn.addEventListener("click", () => appendToExpr(btn.dataset.val)));
 document.getElementById("key-back").addEventListener("click",  backspace);
@@ -255,6 +250,8 @@ async function triggerSkip() {
       (cur) => { if (!cur || cur.status !== "active") return; return { ...cur, status:"skipped" }; }
     );
     if (result.committed) {
+      // Only count rounds toward the global leaderboard for 1v1 games.
+      // Room games and practice never touch /players stats.
       if (room.meta.gameMode === "1v1") {
         const updates = {};
         Object.keys(room.players || {}).forEach(uid => {
@@ -307,6 +304,7 @@ async function handleAbandonment(abandonerUid) {
 }
 
 // ── WIN RESOLUTION ────────────────────────────────────────────
+// ELO is only applied in 1v1 games. Room games show scores but don't affect ratings.
 async function resolveWin(winnerId) {
   const players = room.players || {};
   const allUids = Object.keys(players);
@@ -328,7 +326,9 @@ async function resolveWin(winnerId) {
     updates[`players/${winnerId}/wins`] = increment(1);
   }
 
+  // Always update room score
   updates[`rooms/${roomCode}/players/${winnerId}/roomScore`] = increment(1);
+
   if (Object.keys(updates).length) await update(ref(db), updates);
 }
 

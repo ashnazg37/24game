@@ -16,14 +16,6 @@ onAuthStateChanged(auth, async (user) => {
     showError(`Only @${ALLOWED_DOMAIN} accounts can sign in.`);
     return;
   }
-  
-  // After sign-in, go back to wherever they came from (e.g. a room invite link)
-  const redirect = sessionStorage.getItem("redirectAfterLogin");
-  if (redirect) {
-    sessionStorage.removeItem("redirectAfterLogin");
-    window.location.href = redirect;
-    return;
-  }
   window.location.href = "dashboard.html";
 });
 

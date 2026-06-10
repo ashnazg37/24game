@@ -1,14 +1,3 @@
-// If someone follows a room invite link while not signed in,
-// save the URL and send them to login first.
-import { auth as _authCheck } from "./firebase-config.js";
-import { onAuthStateChanged as _oac } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-_oac(_authCheck, user => {
-  if (!user) {
-    sessionStorage.setItem("redirectAfterLogin", window.location.href);
-    window.location.href = "index.html";
-  }
-}, { once: true });
-
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { ref, set, update, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";

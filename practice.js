@@ -8,8 +8,9 @@ let timeLeft      = 60;
 let elapsed       = 0;
 let timerInterval = null;
 let puzzleStart   = null;
-let expr          = "";   
+let expr          = "";   // expression built via keypad
 
+// Session stats
 let solved = 0, streak = 0, bestMs = null, totalMs = 0;
 
 // ── START ──────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ function nextPuzzle() {
   elapsed     = 0;
   expr        = "";
 
+  // Render number keys with this puzzle's values
   document.getElementById("keypad-numbers").innerHTML = puzzle
     .map(n => `<button class="key key-num" data-val="${n}">${n}</button>`)
     .join("");
@@ -85,29 +87,16 @@ function appendToExpr(val) {
   updateExprDisplay();
   document.getElementById("input-error").style.display = "none";
 }
-
-function backspace() { 
-  expr = expr.replace(/(\d+|[+\-*/()])$/, ''); 
-  updateExprDisplay(); 
-}
-
+function backspace() { expr = expr.slice(0, -1); updateExprDisplay(); }
 function clearExpr()  { expr = ""; updateExprDisplay(); }
-
-function updatePopupState() {
-  const popup = document.getElementById("op-popup");
-  if (!popup) return;
-  const expectsOperator = /[\d)]$/.test(expr.trim());
-  popup.classList.toggle("visible", expectsOperator);
-}
 
 function updateExprDisplay() {
   const display = expr.replace(/\*/g, "×").replace(/\//g, "÷");
   document.getElementById("expr-text").textContent = display;
   document.getElementById("expr-display").classList.toggle("has-content", expr.length > 0);
-  updatePopupState();
 }
 
-// Operator + utility buttons 
+// Operator + utility buttons (attached once)
 document.querySelectorAll(".key-op").forEach(btn =>
   btn.addEventListener("click", () => appendToExpr(btn.dataset.val))
 );
@@ -117,6 +106,7 @@ document.querySelectorAll(".key-paren").forEach(btn =>
 document.getElementById("key-back").addEventListener("click",  backspace);
 document.getElementById("key-clear").addEventListener("click", clearExpr);
 
+// Keyboard support
 window.addEventListener("keydown", (e) => {
   if (!puzzle) return;
   if (e.key === "Backspace")              { e.preventDefault(); backspace(); }

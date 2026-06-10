@@ -23,27 +23,24 @@
 
   <div class="game-layout">
 
+    <!-- MAIN GAME CARD -->
     <div class="card" style="padding:20px;">
 
+      <!-- View 1: Active round -->
       <div id="round-view">
-        
-        <div class="numbers-grid-container">
-          <div class="numbers-grid" id="keypad-numbers"></div>
-          
-          <div class="op-popup" id="op-popup">
-            <button class="key key-op-pop key-op" data-val="+">+</button>
-            <button class="key key-op-pop key-op" data-val="-">−</button>
-            <button class="key key-op-pop key-op" data-val="*">×</button>
-            <button class="key key-op-pop key-op" data-val="/">÷</button>
-          </div>
-        </div>
-
+        <div class="keypad-row" id="keypad-numbers"></div>
         <div class="expr-display" id="expr-display">
           <span id="expr-text"></span><span class="cursor"></span>
         </div>
         <p class="error-msg" id="input-error"></p>
 
-        <div class="keypad-row" style="margin-top:12px;">
+        <div class="keypad-row" style="margin-top:10px;">
+          <button class="key key-op"    data-val="+">+</button>
+          <button class="key key-op"    data-val="-">−</button>
+          <button class="key key-op"    data-val="*">×</button>
+          <button class="key key-op"    data-val="/">÷</button>
+        </div>
+        <div class="keypad-row">
           <button class="key key-paren" data-val="(">(</button>
           <button class="key key-paren" data-val=")">)</button>
           <button class="key key-back"  id="key-back">⌫</button>
@@ -58,6 +55,7 @@
         </div>
       </div>
 
+      <!-- View 2: Round result -->
       <div id="result-view" style="display:none;" class="result-center">
         <div id="result-content"></div>
         <button id="next-round-btn" class="btn btn-primary" style="display:none;max-width:180px;">Next Round →</button>
@@ -65,6 +63,7 @@
         <p id="auto-advance-msg" class="auto-advance" style="display:none;"></p>
       </div>
 
+      <!-- View 3: Game over / abandoned -->
       <div id="end-view" style="display:none;">
         <h2 class="card-title" id="end-title">Game Over</h2>
         <p id="abandon-msg" style="display:none;color:var(--muted);text-align:center;margin-bottom:16px;font-size:0.9rem;"></p>
@@ -77,6 +76,7 @@
 
     </div>
 
+    <!-- SIDEBAR -->
     <div>
       <p class="sidebar-title">This Game</p>
       <ul class="player-list" id="room-leaderboard" style="margin-bottom:20px;"></ul>
@@ -86,6 +86,7 @@
         <ul class="player-list" id="elo-list" style="margin-bottom:20px;"></ul>
       </div>
 
+      <!-- Resign / Leave button -->
       <button id="resign-btn" class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);">
         Resign
       </button>
