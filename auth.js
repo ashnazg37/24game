@@ -3,16 +3,8 @@ import {
   GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const ALLOWED_DOMAIN = "stjohnscollege.co.za";
-
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   if (!user) return;
-  const domain = user.email?.split("@")[1];
-  if (domain !== ALLOWED_DOMAIN) {
-    await signOut(auth);
-    showError(`Only @${ALLOWED_DOMAIN} accounts can sign in.`);
-    return;
-  }
   const redirect = sessionStorage.getItem("redirectAfterLogin");
   if (redirect) {
     sessionStorage.removeItem("redirectAfterLogin");
@@ -24,7 +16,6 @@ onAuthStateChanged(auth, async (user) => {
 
 document.getElementById("sign-in-btn").addEventListener("click", async () => {
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
   try {
     await signInWithPopup(auth, provider);
   } catch (err) {

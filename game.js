@@ -10,44 +10,56 @@ if (!roomCode) window.location.href = "dashboard.html";
 
 let currentUser = null, isHost = false, room = null;
 let skipInFlight = false, autoAdvanceTimeout = null, abandonHandled = false;
-
-// ── CARD STATE ────────────────────────────────────────────────
 let cards = [], selectedIdx = null, selectedOp = null, cardHistory = [];
+
 const OPS = { "+": (a,b)=>a+b, "−": (a,b)=>a-b, "×": (a,b)=>a*b, "÷": (a,b)=>a/b };
 
-// ── BOOT ──────────────────────────────────────────────────────
+// Status banner — shows whatever state we're stuck in so it never looks blank
+function setStatus(msg) {
+  const hint = document.getElementById("card-hint");
+  if (hint) hint.textContent = msg;
+}
+
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     sessionStorage.setItem("redirectAfterLogin", window.location.href);
     window.location.href = "index.html";
     return;
   }
+  currentUser = user;
   document.getElementById("user-photo").src            = user.photoURL || "";
   document.getElementById("room-code-nav").textContent = roomCode;
-  remove(ref(db, `matchmaking/matched/${user.uid}`));
-  remove(ref(db, `matchmaking/seeking/${user.uid}`));
+  remove(ref(db, `matchmaking/matched/${user.uid}`)).catch(()=>{});
+  remove(ref(db, `matchmaking/seeking/${user.uid}`)).catch(()=>{});
   const onlineRef = ref(db, `rooms/${roomCode}/players/${user.uid}/online`);
-  set(onlineRef, true);
+  set(onlineRef, true).catch(()=>{});
   onDisconnect(onlineRef).set(false);
   listenToRoom();
 });
 
 function listenToRoom() {
   onValue(ref(db, `rooms/${roomCode}`), (snap) => {
-    if (!snap.exists()) { alert("Room not found."); window.location.href = "dashboard.html"; return; }
-    room = snap.val();
-    renderGame().catch(console.error);
+    try {
+      if (!snap.exists()) { alert("Room not found."); window.location.href = "dashboard.html"; return; }
+      room = snap.val();
+      renderGame();
+    } catch (err) {
+      console.error("renderGame crashed:", err);
+      setStatus("Error: " + err.message);
+    }
   });
 }
 
-// ── MAIN RENDER ───────────────────────────────────────────────
-async function renderGame() {
+function renderGame() {
+  if (!currentUser || !room || !room.meta) { setStatus("Loading..."); return; }
+
   isHost = room.meta.hostUid === currentUser.uid;
   const is1v1 = room.meta.gameMode === "1v1";
-  document.getElementById("round-display").textContent =
-    `Round ${room.meta.currentRound + 1} / ${room.settings.totalRounds}`;
+  const total = room.settings?.totalRounds ?? 0;
+  document.getElementById("round-display").textContent = `Round ${room.meta.currentRound + 1} / ${total}`;
   document.getElementById("resign-btn").textContent = is1v1 ? "Resign" : "Leave Room";
 
+  // 1v1 abandonment check
   if (is1v1 && room.meta.status === "active" && !abandonHandled) {
     const onlineUids = Object.entries(room.players || {}).filter(([,p]) => p.online).map(([uid]) => uid);
     if (onlineUids.length === 1 && onlineUids[0] === currentUser.uid) {
@@ -57,50 +69,61 @@ async function renderGame() {
   }
 
   renderSidebars();
+
   if (room.meta.status === "finished" || room.meta.status === "abandoned") {
     showView("end-view"); renderEndScreen(); return;
   }
-  const round = currentRound();
-  if (!round) {
-    if (room.meta.status === "active" && isHost) {
-      await initMissingRound();
-      return;
-    }
+
+  if (room.meta.status === "lobby") {
+    setStatus("Waiting for game to start...");
     return;
   }
-  if (round.status === "active") { showView("round-view"); await renderActiveRound(round); }
-  else { showView("result-view"); renderResult(round); }
+
+  const round = currentRound();
+  if (!round) {
+    setStatus("No round data — waiting for host...");
+    // If we're the host and the round is missing, create it
+    if (isHost && room.meta.status === "active") initMissingRound();
+    return;
+  }
+
+  if (round.status === "active") {
+    showView("round-view");
+    renderActiveRound(round);
+  } else {
+    showView("result-view");
+    renderResult(round);
+  }
 }
 
-// ── ACTIVE ROUND ──────────────────────────────────────────────
-async function renderActiveRound(round) {
+function renderActiveRound(round) {
   skipInFlight = false;
   clearTimeout(autoAdvanceTimeout);
   autoAdvanceTimeout = null;
   document.getElementById("auto-advance-msg").style.display = "none";
 
-  const nums = round.numbers
-    ? (Array.isArray(round.numbers) ? round.numbers : Object.values(round.numbers))
-    : [];
-  const numKey = nums.join(",");
+  // Firebase may send numbers as array or object — handle both
+  let nums = [];
+  if (Array.isArray(round.numbers)) nums = round.numbers;
+  else if (round.numbers && typeof round.numbers === "object") nums = Object.values(round.numbers);
+
+  if (!nums.length) {
+    setStatus("Waiting for puzzle...");
+    if (isHost) initMissingRound();
+    return;
+  }
+
+  const numKey = nums.join(",") + "@" + room.meta.currentRound;
   if (window._lastNumKey !== numKey) {
     window._lastNumKey = numKey;
-    cards = nums.map(n => ({ value: n, expr: String(n), used: false, isResult: false }));
+    cards = nums.map(n => ({ value: Number(n), expr: String(n), used: false, isResult: false }));
     selectedIdx = null; selectedOp = null; cardHistory = [];
     clearInputError();
   }
-  if (!cards.length) {
-    const hint = document.getElementById("card-hint");
-    if (hint) hint.textContent = "Waiting for puzzle data...";
-    if (isHost) {
-      await initMissingRound();
-    }
-    return;
-  }
   renderCards();
 
-  const onlineCount = Object.values(room.players || {}).filter(p => p.online).length;
-  const needed = room.settings.skipMode === "unanimous" ? onlineCount : Math.ceil(onlineCount / 2);
+  const onlineCount = Object.values(room.players || {}).filter(p => p.online).length || 1;
+  const needed = room.settings?.skipMode === "unanimous" ? onlineCount : Math.ceil(onlineCount / 2);
   const votes  = Object.keys(round.skipVotes || {}).length;
   document.getElementById("skip-count").textContent  = votes;
   document.getElementById("skip-needed").textContent = needed;
@@ -108,27 +131,35 @@ async function renderActiveRound(round) {
   if (round.status === "active" && needed > 0 && votes >= needed) triggerSkip();
 }
 
-// ── CARD RENDERING ────────────────────────────────────────────
+async function initMissingRound() {
+  if (!isHost) return;
+  const idx = room.meta.currentRound;
+  // Check current DB state — don't overwrite if it appeared between our reads
+  const snap = await get(ref(db, `rooms/${roomCode}/rounds/${idx}`));
+  if (snap.exists() && snap.val().numbers) return;
+  const numbers = getRandomSolvablePuzzle();
+  await update(ref(db), {
+    [`rooms/${roomCode}/rounds/${idx}`]: {
+      numbers, status: "active", startedAt: Date.now(),
+      winnerId: null, winnerName: null, solution: null, skipVotes: {}
+    }
+  });
+}
+
 function renderCards() {
   const grid = document.getElementById("card-grid");
   if (!grid) return;
 
-  // Build the running expression from result cards + current selection
   const exprEl = document.getElementById("expr-display");
   if (exprEl) {
     const resultCards = cards.filter(c => !c.used && c.isResult);
     let display = "";
-    if (selectedIdx !== null && selectedOp !== null) {
-      display = `${cards[selectedIdx].expr} ${selectedOp} …`;
-    } else if (selectedIdx !== null) {
-      display = cards[selectedIdx].expr;
-    } else if (resultCards.length > 0) {
-      display = resultCards[resultCards.length - 1].expr;
-    }
+    if (selectedIdx !== null && selectedOp !== null) display = `${cards[selectedIdx].expr} ${selectedOp} …`;
+    else if (selectedIdx !== null)                   display = cards[selectedIdx].expr;
+    else if (resultCards.length > 0)                 display = resultCards[resultCards.length - 1].expr;
     exprEl.textContent = display;
   }
 
-  // Force grid layout via JS so it can't be overridden
   grid.style.cssText =
     "display:grid;grid-template-columns:1fr 1fr;grid-template-rows:140px 140px;" +
     "gap:10px;width:100%;margin-bottom:12px;";
@@ -150,7 +181,6 @@ function renderCards() {
       div.style.cssText = BASE + "background:#111;border:2px dashed #333;cursor:default;opacity:0.3;";
 
     } else if (i === selectedIdx && selectedOp === null) {
-      // Operator quadrant grid
       div.style.cssText = BASE + "background:#1a1a2e;border:2px solid #818cf8;cursor:default;padding:0;";
       const og = document.createElement("div");
       og.style.cssText = "display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;width:100%;height:100%;";
@@ -182,9 +212,7 @@ function renderCards() {
       div.appendChild(ns); div.appendChild(os);
 
     } else if (selectedOp !== null) {
-      div.style.cssText = idle(card.isResult) +
-        "box-shadow:0 0 20px rgba(103,232,249,0.4);border-color:" +
-        (card.isResult ? "#a5b4fc" : "#67e8f9") + ";";
+      div.style.cssText = idle(card.isResult) + "box-shadow:0 0 20px rgba(103,232,249,0.4);";
       div.textContent = fmt(card.value);
       div.onclick = () => combine(i);
       div.onmouseenter = () => { div.style.transform = "scale(1.04)"; };
@@ -234,7 +262,6 @@ document.getElementById("undo-btn").addEventListener("click", () => {
   clearInputError(); renderCards();
 });
 
-// ── SUBMIT ────────────────────────────────────────────────────
 async function autoSubmit(solution) {
   const result = await runTransaction(
     ref(db, `rooms/${roomCode}/rounds/${room.meta.currentRound}`),
@@ -247,7 +274,6 @@ async function autoSubmit(solution) {
   if (result.committed) await resolveWin(currentUser.uid);
 }
 
-// ── SKIP ──────────────────────────────────────────────────────
 document.getElementById("skip-btn").addEventListener("click", async () => {
   const round = currentRound();
   if (!round || round.status !== "active" || round.skipVotes?.[currentUser.uid]) return;
@@ -271,7 +297,6 @@ async function triggerSkip() {
   } finally { skipInFlight = false; }
 }
 
-// ── RESULT / END ──────────────────────────────────────────────
 function renderResult(round) {
   const el = document.getElementById("result-content");
   if (round.status === "solved")
@@ -328,7 +353,6 @@ function renderSidebars() {
   }
 }
 
-// ── NEXT ROUND ────────────────────────────────────────────────
 document.getElementById("next-round-btn").addEventListener("click", () => nextRound());
 async function nextRound() {
   if (!isHost) return;
@@ -341,7 +365,6 @@ async function nextRound() {
   });
 }
 
-// ── RESIGN / ABANDON / ELO ────────────────────────────────────
 document.getElementById("resign-btn").addEventListener("click", async () => {
   if (!confirm(room?.meta?.gameMode === "1v1" ? "Resign? This counts as a loss." : "Leave this room?")) return;
   const onlineRef = ref(db, `rooms/${roomCode}/players/${currentUser.uid}/online`);
@@ -395,24 +418,14 @@ function eloChanges(ratings, winnerId, uids, K = 32) {
   return Object.fromEntries(Object.entries(d).map(([uid, v]) => [uid, Math.round(v)]));
 }
 
-function currentRound() { return room?.rounds?.[room.meta.currentRound] ?? null; }
-async function initMissingRound() {
-  if (!isHost) return;
-  const round = currentRound();
-  if (round?.numbers && Object.values(round.numbers || {}).length) return;
-  const numbers = getRandomSolvablePuzzle();
-  await update(ref(db), {
-    [`rooms/${roomCode}/rounds/${room.meta.currentRound}`]: {
-      numbers, status: "active", startedAt: Date.now(),
-      winnerId: null, winnerName: null, solution: null, skipVotes: {}
-    }
-  });
+function currentRound() {
+  if (!room?.rounds) return null;
+  const idx = room.meta.currentRound;
+  // Firebase may return rounds as array or object
+  if (Array.isArray(room.rounds)) return room.rounds[idx] ?? null;
+  return room.rounds[idx] ?? room.rounds[String(idx)] ?? null;
 }
-function fmt(v) {
-  const value = typeof v === "string" ? parseFloat(v) : v;
-  if (Number.isInteger(value)) return String(value);
-  return String(parseFloat(value.toFixed(3)));
-}
+function fmt(v) { return Number.isInteger(v) ? String(v) : String(parseFloat(v.toFixed(3))); }
 function showView(id) { ["round-view","result-view","end-view"].forEach(v => document.getElementById(v).style.display = v === id ? "block" : "none"); }
 function showInputError(msg) { const el = document.getElementById("input-error"); el.textContent = msg; el.style.display = "block"; }
 function clearInputError()   { const el = document.getElementById("input-error"); el.textContent = ""; el.style.display = "none"; }
