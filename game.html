@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
 
@@ -17,7 +16,6 @@
     <div style="display:flex;align-items:center;gap:14px;">
       <strong id="room-code-nav" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent);letter-spacing:0.1em;"></strong>
       <img id="user-photo" src="" style="width:30px;height:30px;border-radius:50%;border:2px solid var(--border);" onerror="this.style.display='none'">
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
     </div>
   </nav>
 
@@ -79,6 +77,5 @@
   </div>
 
   <script type="module" src="game.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

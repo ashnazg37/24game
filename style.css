@@ -35,25 +35,6 @@
   --blur-sm: blur(12px) saturate(1.2);
 }
 
-/* Light mode — translucent whites over a pastel gradient bg */
-[data-theme="light"] {
-  --bg:        #e8eaf6;
-  --surface:   rgba(255,255,255,0.45);
-  --surface-2: rgba(255,255,255,0.65);
-  --border:    rgba(100,100,200,0.18);
-  --border-hi: rgba(100,100,200,0.35);
-  --text:      rgba(20,20,60,0.92);
-  --text-2:    rgba(20,20,60,0.60);
-  --muted:     rgba(20,20,60,0.42);
-}
-[data-theme="light"] body {
-  background-color: #e8eaf6;
-  background-image:
-    radial-gradient(ellipse 60% 50% at 8%  12%, rgba(129,140,248,0.35) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 45% at 92% 88%, rgba(103,232,249,0.28) 0%, transparent 55%),
-    radial-gradient(ellipse 35% 30% at 65% 42%, rgba(196,181,253,0.22) 0%, transparent 50%),
-    radial-gradient(circle at 1px 1px, rgba(100,100,200,0.08) 1px, transparent 0);
-}
 
 /* ── RESET ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,14 +99,8 @@ body {
 .btn-ghost { background:transparent; color:var(--muted); width:auto; padding:8px 0; font-size:0.85rem; }
 .btn-ghost:hover { color:var(--text); }
 
-/* Theme toggle */
-#theme-btn {
-  width:auto; padding:6px 12px; font-size:1rem;
-  background:var(--surface); backdrop-filter:var(--blur-sm);
-  border:1px solid var(--border); border-radius:var(--radius-sm);
-  cursor:pointer; color:var(--text); transition:all 0.15s;
-}
-#theme-btn:hover { background:var(--surface-2); border-color:var(--border-hi); }
+
+
 
 /* ── FORMS ── */
 .form-group { margin-bottom:16px; }
@@ -413,3 +388,20 @@ select option { background:#0d1029; color:var(--text); }
 
 /* Action row — undo/skip side by side */
 .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+
+/* ── CARD COLOUR TOKENS (dark default, overridden in light) ── */
+:root {
+  --card-idle-bg:        #0d3d48;
+  --card-idle-text:      #67e8f9;
+  --card-idle-border:    #67e8f9;
+  --card-result-bg:      #1a1040;
+  --card-result-text:    #a5b4fc;
+  --card-result-border:  #818cf8;
+  --card-ops-bg:         #1a1a2e;
+  --card-ops-border:     #818cf8;
+  --card-empty-bg:       #111;
+  --card-empty-border:   #333;
+  --card-op-btn-color:   #aaa;
+  --card-op-btn-hover-bg:#818cf833;
+  --card-op-btn-hover-c: #a5b4fc;
+}

@@ -22,7 +22,6 @@ onAuthStateChanged(auth, (user) => {
     window.location.href = "index.html";
     return;
   }
-  currentUser = user;
   document.getElementById("user-photo").src            = user.photoURL || "";
   document.getElementById("room-code-nav").textContent = roomCode;
   remove(ref(db, `matchmaking/matched/${user.uid}`));
@@ -37,12 +36,12 @@ function listenToRoom() {
   onValue(ref(db, `rooms/${roomCode}`), (snap) => {
     if (!snap.exists()) { alert("Room not found."); window.location.href = "dashboard.html"; return; }
     room = snap.val();
-    renderGame();
+    renderGame().catch(console.error);
   });
 }
 
 // ── MAIN RENDER ───────────────────────────────────────────────
-function renderGame() {
+async function renderGame() {
   isHost = room.meta.hostUid === currentUser.uid;
   const is1v1 = room.meta.gameMode === "1v1";
   document.getElementById("round-display").textContent =
@@ -62,25 +61,41 @@ function renderGame() {
     showView("end-view"); renderEndScreen(); return;
   }
   const round = currentRound();
-  if (!round) return;
-  if (round.status === "active") { showView("round-view"); renderActiveRound(round); }
+  if (!round) {
+    if (room.meta.status === "active" && isHost) {
+      await initMissingRound();
+      return;
+    }
+    return;
+  }
+  if (round.status === "active") { showView("round-view"); await renderActiveRound(round); }
   else { showView("result-view"); renderResult(round); }
 }
 
 // ── ACTIVE ROUND ──────────────────────────────────────────────
-function renderActiveRound(round) {
+async function renderActiveRound(round) {
   skipInFlight = false;
   clearTimeout(autoAdvanceTimeout);
   autoAdvanceTimeout = null;
   document.getElementById("auto-advance-msg").style.display = "none";
 
-  const nums = Object.values(round.numbers);
+  const nums = round.numbers
+    ? (Array.isArray(round.numbers) ? round.numbers : Object.values(round.numbers))
+    : [];
   const numKey = nums.join(",");
   if (window._lastNumKey !== numKey) {
     window._lastNumKey = numKey;
     cards = nums.map(n => ({ value: n, expr: String(n), used: false, isResult: false }));
     selectedIdx = null; selectedOp = null; cardHistory = [];
     clearInputError();
+  }
+  if (!cards.length) {
+    const hint = document.getElementById("card-hint");
+    if (hint) hint.textContent = "Waiting for puzzle data...";
+    if (isHost) {
+      await initMissingRound();
+    }
+    return;
   }
   renderCards();
 
@@ -381,7 +396,23 @@ function eloChanges(ratings, winnerId, uids, K = 32) {
 }
 
 function currentRound() { return room?.rounds?.[room.meta.currentRound] ?? null; }
-function fmt(v) { return Number.isInteger(v) ? String(v) : String(parseFloat(v.toFixed(3))); }
+async function initMissingRound() {
+  if (!isHost) return;
+  const round = currentRound();
+  if (round?.numbers && Object.values(round.numbers || {}).length) return;
+  const numbers = getRandomSolvablePuzzle();
+  await update(ref(db), {
+    [`rooms/${roomCode}/rounds/${room.meta.currentRound}`]: {
+      numbers, status: "active", startedAt: Date.now(),
+      winnerId: null, winnerName: null, solution: null, skipVotes: {}
+    }
+  });
+}
+function fmt(v) {
+  const value = typeof v === "string" ? parseFloat(v) : v;
+  if (Number.isInteger(value)) return String(value);
+  return String(parseFloat(value.toFixed(3)));
+}
 function showView(id) { ["round-view","result-view","end-view"].forEach(v => document.getElementById(v).style.display = v === id ? "block" : "none"); }
 function showInputError(msg) { const el = document.getElementById("input-error"); el.textContent = msg; el.style.display = "block"; }
 function clearInputError()   { const el = document.getElementById("input-error"); el.textContent = ""; el.style.display = "none"; }
