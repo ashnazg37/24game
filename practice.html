@@ -31,14 +31,12 @@
     #start-screen h2 { font-family:var(--font-display); font-size:2.5rem; margin-bottom:6px; background:linear-gradient(135deg,#818cf8,#c4b5fd 50%,#67e8f9); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     #start-screen p  { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
   </style>
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-logo">24</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <a href="index.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
     </div>
   </nav>
 
@@ -92,6 +90,5 @@
   </div>
 
   <script type="module" src="practice.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

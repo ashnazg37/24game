@@ -413,3 +413,20 @@ select option { background:#0d1029; color:var(--text); }
 
 /* Action row — undo/skip side by side */
 .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+
+/* ── CARD COLOUR TOKENS (dark default, overridden in light) ── */
+:root {
+  --card-idle-bg:        #0d3d48;
+  --card-idle-text:      #67e8f9;
+  --card-idle-border:    #67e8f9;
+  --card-result-bg:      #1a1040;
+  --card-result-text:    #a5b4fc;
+  --card-result-border:  #818cf8;
+  --card-ops-bg:         #1a1a2e;
+  --card-ops-border:     #818cf8;
+  --card-empty-bg:       #111;
+  --card-empty-border:   #333;
+  --card-op-btn-color:   #aaa;
+  --card-op-btn-hover-bg:#818cf833;
+  --card-op-btn-hover-c: #a5b4fc;
+}

@@ -7,13 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-logo">24</div>
     <a href="dashboard.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
-    <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
   </nav>
 
   <div class="container" style="max-width:680px;padding-top:32px;">
@@ -45,6 +43,5 @@
   </div>
 
   <script type="module" src="leaderboard.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

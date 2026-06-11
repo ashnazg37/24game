@@ -7,6 +7,14 @@ let currentUser = null;
 onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = "index.html"; return; }
   currentUser = user;
+
+  const uSnap = await get(ref(db, `players/${user.uid}/username`));
+  if (!uSnap.exists()) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
+    window.location.href = "username.html";
+    return;
+  }
+
   load();
 });
 

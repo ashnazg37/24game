@@ -23,6 +23,15 @@ onAuthStateChanged(auth, (user) => {
     return;
   }
   currentUser = user;
+
+  // Ensure username exists
+  const uSnap = await get(ref(db, `players/${user.uid}/username`));
+  if (!uSnap.exists()) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
+    window.location.href = "username.html";
+    return;
+  }
+
   document.getElementById("user-photo").src            = user.photoURL || "";
   document.getElementById("room-code-nav").textContent = roomCode;
   remove(ref(db, `matchmaking/matched/${user.uid}`));
@@ -125,31 +134,31 @@ function renderCards() {
     "font-family:'Bebas Neue',sans-serif;overflow:hidden;transition:opacity 0.15s,transform 0.1s;";
 
   const idle = r => r
-    ? BASE + "background:#1a1040;color:#a5b4fc;border:2px solid #818cf8;font-size:2.4rem;"
-    : BASE + "background:#0d3d48;color:#67e8f9;border:2px solid #67e8f9;font-size:2.8rem;";
+    ? BASE + "background:var(--card-result-bg);color:var(--card-result-text);border:2px solid var(--card-result-border);font-size:2.4rem;"
+    : BASE + "background:var(--card-idle-bg);color:var(--card-idle-text);border:2px solid var(--card-idle-border);font-size:2.8rem;";
 
   cards.forEach((card, i) => {
     const div = document.createElement("div");
 
     if (card.used) {
-      div.style.cssText = BASE + "background:#111;border:2px dashed #333;cursor:default;opacity:0.3;";
+      div.style.cssText = BASE + "background:var(--card-empty-bg);border:2px dashed var(--card-empty-border);cursor:default;opacity:0.3;";
 
     } else if (i === selectedIdx && selectedOp === null) {
       // Operator quadrant grid
-      div.style.cssText = BASE + "background:#1a1a2e;border:2px solid #818cf8;cursor:default;padding:0;";
+      div.style.cssText = BASE + "background:var(--card-ops-bg);border:2px solid var(--card-ops-border);cursor:default;padding:0;";
       const og = document.createElement("div");
       og.style.cssText = "display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;width:100%;height:100%;";
       ["+","−","×","÷"].forEach((sym, idx) => {
         const b = document.createElement("button");
         b.style.cssText =
           "border:none;background:transparent;font-size:2rem;font-family:'Bebas Neue',sans-serif;" +
-          "cursor:pointer;color:#aaa;display:flex;align-items:center;justify-content:center;";
+          "cursor:pointer;color:var(--card-op-btn-color);display:flex;align-items:center;justify-content:center;";
         const br = "1px solid #333";
         if (idx === 0) { b.style.borderRight = br; b.style.borderBottom = br; }
         if (idx === 1) b.style.borderBottom = br;
         if (idx === 2) b.style.borderRight  = br;
         b.textContent = sym;
-        b.onmouseenter = () => { b.style.background = "rgba(129,140,248,0.2)"; b.style.color = "#a5b4fc"; };
+        b.onmouseenter = () => { b.style.background = "var(--card-op-btn-hover-bg)"; b.style.color = "var(--card-op-btn-hover-c)"; };
         b.onmouseleave = () => { b.style.background = "transparent"; b.style.color = "#aaa"; };
         b.onclick = e => { e.stopPropagation(); selectedOp = sym; renderCards(); };
         og.appendChild(b);
@@ -158,7 +167,7 @@ function renderCards() {
       div.onclick = () => { selectedIdx = null; selectedOp = null; renderCards(); };
 
     } else if (i === selectedIdx && selectedOp !== null) {
-      div.style.cssText = BASE + "background:#1a1040;color:#a5b4fc;border:2px solid #818cf8;" +
+      div.style.cssText = BASE + "background:var(--card-result-bg);color:var(--card-result-text);border:2px solid var(--card-result-border);" +
         "flex-direction:column;gap:4px;font-size:2.2rem;";
       const ns = document.createElement("span"); ns.textContent = fmt(card.value);
       const os = document.createElement("span");

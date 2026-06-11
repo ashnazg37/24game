@@ -1,6 +1,17 @@
+// If someone follows a room invite link while not signed in,
+// save the URL and send them to login first.
+import { auth as _authCheck } from "./firebase-config.js";
+import { onAuthStateChanged as _oac } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+_oac(_authCheck, user => {
+  if (!user) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
+    window.location.href = "index.html";
+  }
+}, { once: true });
+
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { ref, set, update, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { ref, get, set, update, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getRandomSolvablePuzzle } from "./solver.js";
 
 const roomCode = new URLSearchParams(window.location.search).get("room");
@@ -12,6 +23,15 @@ let isHost      = false;
 onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = "index.html"; return; }
   currentUser = user;
+
+  // Ensure username exists
+  const uSnap = await get(ref(db, `players/${user.uid}/username`));
+  if (!uSnap.exists()) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href);
+    window.location.href = "username.html";
+    return;
+  }
+
   document.getElementById("user-name").textContent        = user.displayName;
   document.getElementById("user-photo").src               = user.photoURL || "";
   document.getElementById("room-code-display").textContent = roomCode;

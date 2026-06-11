@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
@@ -15,7 +14,6 @@
     <div class="nav-user">
       <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
       <span id="user-name"></span>
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
     </div>
   </nav>
 
@@ -46,6 +44,5 @@
   </div>
 
   <script type="module" src="lobby.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24 Game — Choose Username</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-center">
+  <div class="landing-card" style="max-width:400px;">
+    <div class="nav-logo" style="font-size:3.5rem;margin-bottom:12px;">24</div>
+    <h2 style="font-family:var(--font-display);font-size:1.8rem;margin-bottom:6px;letter-spacing:0.04em;">Choose a username</h2>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:28px;">
+      This is how other players will find and challenge you.
+    </p>
+
+    <div class="form-group">
+      <label for="username-input">Username</label>
+      <input id="username-input" type="text" placeholder="e.g. mathchamp99"
+        maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <p id="username-status" style="font-size:0.82rem;margin-top:6px;min-height:1.2em;"></p>
+    </div>
+
+    <p style="color:var(--muted);font-size:0.78rem;margin-bottom:20px;">
+      3–20 characters. Letters, numbers and underscores only.
+    </p>
+
+    <button id="save-btn" class="btn btn-primary" disabled>Save username</button>
+    <p id="save-error" style="color:var(--danger);font-size:0.84rem;margin-top:12px;display:none;"></p>
+  </div>
+  <script type="module" src="username.js"></script>
+</body>
+</html>
