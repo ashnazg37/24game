@@ -28,28 +28,13 @@
 
       <!-- View 1: Active round -->
       <div id="round-view">
-        <div class="keypad-row" id="keypad-numbers"></div>
-        <div class="expr-display" id="expr-display">
-          <span id="expr-text"></span><span class="cursor"></span>
-        </div>
+        <p id="expr-display" style="font-family:'Space Mono',monospace;font-size:0.95rem;color:var(--accent);text-align:center;min-height:1.4em;margin-bottom:6px;letter-spacing:0.03em;word-break:break-all;"></p>
+        <p id="card-hint" style="text-align:center;font-size:0.82rem;color:var(--muted);margin-bottom:8px;min-height:1.2em;">Pick a number</p>
+        <div id="card-grid"></div>
         <p class="error-msg" id="input-error"></p>
-
-        <div class="keypad-row" style="margin-top:10px;">
-          <button class="key key-op"    data-val="+">+</button>
-          <button class="key key-op"    data-val="-">−</button>
-          <button class="key key-op"    data-val="*">×</button>
-          <button class="key key-op"    data-val="/">÷</button>
-        </div>
-        <div class="keypad-row">
-          <button class="key key-paren" data-val="(">(</button>
-          <button class="key key-paren" data-val=")">)</button>
-          <button class="key key-back"  id="key-back">⌫</button>
-          <button class="key key-clear" id="key-clear">C</button>
-        </div>
-
-        <div class="action-row" style="margin-top:12px;">
-          <button id="submit-btn" class="btn btn-primary">Submit</button>
-          <button id="skip-btn"   class="btn btn-secondary">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <button id="undo-btn" class="btn btn-secondary">↩ Undo</button>
+          <button id="skip-btn" class="btn btn-secondary">
             Skip (<span id="skip-count">0</span>/<span id="skip-needed">?</span>)
           </button>
         </div>
@@ -86,7 +71,6 @@
         <ul class="player-list" id="elo-list" style="margin-bottom:20px;"></ul>
       </div>
 
-      <!-- Resign / Leave button -->
       <button id="resign-btn" class="btn btn-secondary" style="border-color:var(--danger);color:var(--danger);">
         Resign
       </button>
