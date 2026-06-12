@@ -1,7 +1,7 @@
 // Zero local imports — solver inlined so a missing file can't break this.
-import { getRandomSolvablePuzzle } from "./solver.js";
+import { getRandomSolvablePuzzle, getSolution } from "./solver.js";
 
-let timeLimit=60, timeLeft=60, elapsed=0, timerInterval=null, puzzleStart=null;
+let timeLimit=60, timeLeft=60, elapsed=0, timerInterval=null, puzzleStart=null, puzzleSolution=null;
 let solved=0, streak=0, bestMs=null, totalMs=0;
 let cards=[], selectedIdx=null, selectedOp=null, cardHistory=[];
 const OPS={"+": (a,b)=>a+b, "−":(a,b)=>a-b, "×":(a,b)=>a*b, "÷":(a,b)=>a/b};
@@ -18,7 +18,9 @@ document.getElementById("start-btn").addEventListener("click", () => {
 
 function nextPuzzle() {
   clearInterval(timerInterval);
-  cards = getRandomSolvablePuzzle().map(n => ({ value: n, expr: String(n), used: false, isResult: false }));
+  const numbers = getRandomSolvablePuzzle();
+  puzzleSolution = getSolution(numbers);
+  cards = numbers.map(n => ({ value: n, expr: String(n), used: false, isResult: false }));
   selectedIdx = null; selectedOp = null; cardHistory = [];
   puzzleStart = Date.now(); elapsed = 0;
   clearErr(); hideFeedback(); renderCards();
@@ -45,7 +47,12 @@ function paint(left, total) {
   document.getElementById("timer-fill").style.width = pct + "%";
   document.getElementById("timer-fill").style.backgroundColor = col;
 }
-function onTimeout() { streak=0; showFeedback("⏱ Time's up!","timeout"); updateStats(); setTimeout(nextPuzzle,1800); }
+function onTimeout() {
+  streak = 0;
+  const answer = puzzleSolution ? ` Answer: ${puzzleSolution}` : "";
+  showFeedback(`⏱ Time's up!${answer}`, "timeout");
+  updateStats(); setTimeout(nextPuzzle, 1800);
+}
 
 // ── CARD RENDERING ────────────────────────────────────────────
 function renderCards() {
@@ -174,8 +181,12 @@ document.getElementById("undo-btn").addEventListener("click",()=>{
   cards=cardHistory.pop();selectedIdx=null;selectedOp=null;clearErr();renderCards();
 });
 document.getElementById("skip-btn").addEventListener("click",()=>{
-  clearInterval(timerInterval);streak=0;
-  showFeedback("Skipped.","wrong");updateStats();setTimeout(nextPuzzle,1000);
+  clearInterval(timerInterval);
+  streak=0;
+  const answer = puzzleSolution ? ` Answer: ${puzzleSolution}` : "";
+  showFeedback(`Skipped.${answer}`, "wrong");
+  updateStats();
+  setTimeout(nextPuzzle,1000);
 });
 
 // ── HELPERS ───────────────────────────────────────────────────
