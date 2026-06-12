@@ -2,49 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>24 Game — Leaderboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-logo">24</div>
     <a href="dashboard.html" style="color:var(--muted);font-size:0.85rem;text-decoration:none;">← Back</a>
-    <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
   </nav>
-
-  <div class="container" style="max-width:680px;padding-top:32px;">
+  <div class="container" style="max-width:700px;padding-top:28px;">
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <h1 class="card-title" style="margin-bottom:0;">Global Leaderboard</h1>
-        <button id="refresh-btn" class="btn btn-secondary" style="width:auto;padding:8px 18px;font-size:0.85rem;">
-          Refresh
-        </button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h1 class="card-title" style="margin-bottom:0;">Leaderboard</h1>
+        <button id="refresh-btn" class="btn btn-secondary" style="width:auto;padding:8px 18px;font-size:0.85rem;">Refresh</button>
       </div>
-
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="elo">ELO Rankings</button>
+        <button class="tab-btn" data-tab="practice">Practice</button>
+      </div>
       <p id="loading" style="color:var(--muted);text-align:center;padding:32px;">Loading…</p>
-      <p id="empty"   style="display:none;color:var(--muted);text-align:center;padding:32px;">No games played yet.</p>
-
-      <table class="lb-table" id="lb-table" style="display:none;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th style="text-align:right;">ELO</th>
-            <th style="text-align:right;">Wins</th>
-            <th style="text-align:right;">Played</th>
-            <th style="text-align:right;">Win %</th>
-          </tr>
-        </thead>
-        <tbody id="lb-body"></tbody>
-      </table>
+      <p id="empty" style="display:none;color:var(--muted);text-align:center;padding:32px;">No data yet.</p>
+      <!-- ELO tab -->
+      <div class="table-scroll" id="tab-elo">
+        <table class="lb-table" id="elo-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th style="text-align:right;">ELO</th>
+              <th style="text-align:right;">Wins</th>
+              <th style="text-align:right;">Played</th>
+              <th style="text-align:right;">Win %</th>
+            </tr>
+          </thead>
+          <tbody id="elo-body"></tbody>
+        </table>
+      </div>
+      <!-- Practice tab -->
+      <div class="table-scroll" id="tab-practice" style="display:none;">
+        <table class="lb-table" id="practice-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th style="text-align:right;">Best Time</th>
+              <th style="text-align:right;">Best Streak</th>
+            </tr>
+          </thead>
+          <tbody id="practice-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
-
   <script type="module" src="leaderboard.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

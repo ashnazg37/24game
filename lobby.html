@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>24 Game — Lobby</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
@@ -15,37 +14,28 @@
     <div class="nav-user">
       <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
       <span id="user-name"></span>
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
     </div>
   </nav>
-
   <div class="container" style="max-width:500px;padding-top:40px;">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <h2 class="card-title" style="margin-bottom:0;">Lobby</h2>
         <span class="badge badge-lobby">Waiting</span>
       </div>
-
       <div class="room-code" id="room-code-display">——————</div>
       <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:20px;">
-        <p style="color:var(--muted);font-size:0.85rem;margin:0;">Share this code with your class</p>
+        <p style="color:var(--muted);font-size:0.85rem;margin:0;">Share this code</p>
         <button id="copy-room-link-btn" class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:0.8rem;">Copy link</button>
       </div>
-
+      <p id="room-info" style="color:var(--muted);font-size:0.78rem;text-align:center;margin-bottom:14px;"></p>
       <p id="player-count" style="color:var(--muted);font-size:0.85rem;margin-bottom:10px;">0 players joined</p>
       <ul class="player-list" id="player-list"></ul>
-
       <div id="host-controls" style="display:none;margin-top:24px;">
         <button id="start-btn" class="btn btn-primary">Start Game</button>
-        <p style="color:var(--muted);font-size:0.8rem;text-align:center;margin-top:8px;">All players in the lobby will be included</p>
       </div>
-      <p id="waiting-msg" style="display:none;color:var(--muted);text-align:center;margin-top:24px;font-size:0.9rem;">
-        Waiting for the host to start…
-      </p>
+      <p id="waiting-msg" style="display:none;color:var(--muted);text-align:center;margin-top:24px;font-size:0.9rem;">Waiting for host to start…</p>
     </div>
   </div>
-
   <script type="module" src="lobby.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>
