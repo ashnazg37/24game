@@ -1,44 +1,51 @@
-import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { requireAuth } from './session.js';
 
-let currentUser = null;
+const session = requireAuth();
+if (!session) throw new Error('redirecting');
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) { window.location.href = "index.html"; return; }
-  currentUser = user;
-  load();
-});
+const { token, user } = session;
 
-document.getElementById("refresh-btn").addEventListener("click", load);
+document.getElementById('refresh-btn').addEventListener('click', load);
+
+load();
 
 async function load() {
-  document.getElementById("loading").style.display    = "block";
-  document.getElementById("lb-table").style.display   = "none";
-  document.getElementById("empty").style.display      = "none";
+  document.getElementById('loading').style.display   = 'block';
+  document.getElementById('lb-table').style.display  = 'none';
+  document.getElementById('empty').style.display     = 'none';
 
-  const snap = await get(ref(db, "players"));
+  let players;
+  try {
+    const res = await fetch('/api/players', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    players = data.players;
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('empty').style.display   = 'block';
+    document.getElementById('empty').textContent     = 'Could not load leaderboard.';
+    console.error(err);
+    return;
+  }
 
-  document.getElementById("loading").style.display = "none";
+  document.getElementById('loading').style.display = 'none';
 
-  if (!snap.exists()) { document.getElementById("empty").style.display = "block"; return; }
+  if (!players.length) {
+    document.getElementById('empty').style.display = 'block';
+    return;
+  }
 
-  const players = Object.entries(snap.val())
-    .map(([uid, d]) => ({ uid, ...d }))
-    .filter(p => (p.roundsPlayed ?? 0) > 0)
-    .sort((a, b) => (b.rating ?? 1200) - (a.rating ?? 1200));
-
-  if (!players.length) { document.getElementById("empty").style.display = "block"; return; }
-
-  document.getElementById("lb-body").innerHTML = players.map((p, i) => {
+  document.getElementById('lb-body').innerHTML = players.map((p, i) => {
     const winPct = p.roundsPlayed > 0 ? Math.round((p.wins / p.roundsPlayed) * 100) : 0;
-    const you    = p.uid === currentUser?.uid;
+    const you    = p.googleId === user.googleId;
     return `
-      <tr class="${you ? "is-you" : ""}">
+      <tr class="${you ? 'is-you' : ''}">
         <td class="lb-rank">${i + 1}</td>
         <td><div class="lb-name">
-          <img src="${p.photoURL || ""}" onerror="this.style.display='none'">
-          ${p.displayName}${you ? " (you)" : ""}
+          <img src="${p.photoURL || ''}" onerror="this.style.display='none'">
+          ${p.displayName}${you ? ' (you)' : ''}
         </div></td>
         <td class="lb-rating">${p.rating ?? 1200}</td>
         <td class="lb-stat">${p.wins ?? 0}</td>
@@ -46,7 +53,7 @@ async function load() {
         <td class="lb-stat">${winPct}%</td>
       </tr>
     `;
-  }).join("");
+  }).join('');
 
-  document.getElementById("lb-table").style.display = "table";
+  document.getElementById('lb-table').style.display = 'table';
 }
