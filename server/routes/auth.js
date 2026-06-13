@@ -13,6 +13,40 @@ function getGoogleClient() {
   return googleClient;
 }
 
+// Find or create a user, linking Firebase-imported accounts by email when googleId doesn't match.
+async function findOrLinkUser({ googleId, displayName, photoURL, email }) {
+  // 1. Fast path — correct googleId already stored
+  let user = await User.findOne({ googleId });
+
+  if (!user && email) {
+    // 2. Email fallback — handles Firebase-imported accounts (wrong googleId stored)
+    user = await User.findOne({ email: email.toLowerCase() });
+    if (user) {
+      // Link: overwrite the stale Firebase UID with the real Google sub
+      user.googleId = googleId;
+    }
+  }
+
+  if (user) {
+    user.displayName = displayName;
+    if (photoURL)                    user.photoURL = photoURL;
+    if (email && !user.email)        user.email    = email.toLowerCase();
+    await user.save();
+  } else {
+    user = await User.create({
+      googleId,
+      email:        email ? email.toLowerCase() : undefined,
+      displayName,
+      photoURL:     photoURL || '',
+      rating:       1200,
+      wins:         0,
+      roundsPlayed: 0
+    });
+  }
+
+  return user;
+}
+
 // POST /api/auth/google
 // Body: { credential: <Google ID Token string> }
 // Returns: { token: <JWT>, user: { displayName, photoURL, rating, wins, roundsPlayed } }
@@ -35,21 +69,14 @@ router.post('/google', async (req, res) => {
     return res.status(401).json({ error: 'Invalid Google token' });
   }
 
-  const { sub: googleId, name: displayName, picture: photoURL } = payload;
+  const { sub: googleId, name: displayName, picture: photoURL, email } = payload;
 
-  // 2. Upsert user — $setOnInsert prevents overwriting rating/wins on re-login
+  // 2. Find or create user, linking Firebase-imported accounts by email
   let user;
   try {
-    user = await User.findOneAndUpdate(
-      { googleId },
-      {
-        $set: { displayName, photoURL: photoURL || '' },
-        $setOnInsert: { rating: 1200, wins: 0, roundsPlayed: 0 }
-      },
-      { upsert: true, new: true, runValidators: true }
-    );
+    user = await findOrLinkUser({ googleId, displayName, photoURL, email });
   } catch (err) {
-    console.error('DB upsert error:', err);
+    console.error('DB error:', err);
     return res.status(500).json({ error: 'Database error' });
   }
 
@@ -103,18 +130,11 @@ router.post('/google-redirect', express.urlencoded({ extended: false }), async (
     return res.status(401).send('Invalid Google token');
   }
 
-  const { sub: googleId, name: displayName, picture: photoURL } = payload;
+  const { sub: googleId, name: displayName, picture: photoURL, email } = payload;
 
   let user;
   try {
-    user = await User.findOneAndUpdate(
-      { googleId },
-      {
-        $set: { displayName, photoURL: photoURL || '' },
-        $setOnInsert: { rating: 1200, wins: 0, roundsPlayed: 0 }
-      },
-      { upsert: true, new: true, runValidators: true }
-    );
+    user = await findOrLinkUser({ googleId, displayName, photoURL, email });
   } catch {
     return res.status(500).send('Database error');
   }
