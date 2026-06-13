@@ -18,19 +18,19 @@ async function uniqueCode() {
   throw new Error('Could not generate a unique room code');
 }
 
-async function createMatch(playerA, playerB) {
+async function createMatch(playerA, playerB, isRated = true) {
   const roomCode = await uniqueCode();
   const numbers  = getRandomSolvablePuzzle();
 
   const room = new Room({
     roomCode,
     meta: {
-      hostUid:  playerA.googleId,
-      status:   'active',
-      gameMode: '1v1',
-      isRated:  true,
+      hostUid:      playerA.googleId,
+      status:       'active',
+      gameMode:     '1v1',
+      isRated,
       currentRound: 0,
-      createdAt: Date.now()
+      createdAt:    Date.now()
     },
     settings: { totalRounds: 3, skipMode: 'unanimous' },
     players: {
@@ -66,11 +66,12 @@ async function createMatch(playerA, playerB) {
   return roomCode;
 }
 
-function registerMatchmaking(socket, io, seekingQueue) {
+function registerMatchmaking(socket, io, ratedQueue, unratedQueue) {
   const { googleId, userId } = socket.user;
 
-  socket.on('queue:join', async () => {
-    if (seekingQueue.has(googleId)) return; // already in queue
+  socket.on('queue:join', async ({ isRated = true } = {}) => {
+    // Prevent joining if already in either queue
+    if (ratedQueue.has(googleId) || unratedQueue.has(googleId)) return;
 
     let user;
     try {
@@ -78,7 +79,8 @@ function registerMatchmaking(socket, io, seekingQueue) {
     } catch { return; }
     if (!user) return;
 
-    seekingQueue.set(googleId, {
+    const queue = isRated ? ratedQueue : unratedQueue;
+    queue.set(googleId, {
       googleId,
       userId,
       displayName: user.displayName,
@@ -87,40 +89,39 @@ function registerMatchmaking(socket, io, seekingQueue) {
       socketId:    socket.id
     });
 
-    io.emit('queue:count', seekingQueue.size);
+    io.emit('queue:count', ratedQueue.size + unratedQueue.size);
 
-    // Try to match the first two players in the queue
-    if (seekingQueue.size < 2) return;
+    // Try to match the first two players in the same queue
+    if (queue.size < 2) return;
 
-    const entries = [...seekingQueue.values()];
+    const entries = [...queue.values()];
     const playerA = entries[0];
     const playerB = entries[1];
 
     // Remove both before async room creation to prevent double-match
-    seekingQueue.delete(playerA.googleId);
-    seekingQueue.delete(playerB.googleId);
-    io.emit('queue:count', seekingQueue.size);
+    queue.delete(playerA.googleId);
+    queue.delete(playerB.googleId);
+    io.emit('queue:count', ratedQueue.size + unratedQueue.size);
 
     let roomCode;
     try {
-      roomCode = await createMatch(playerA, playerB);
+      roomCode = await createMatch(playerA, playerB, isRated);
     } catch (err) {
       console.error('[matchmaking] createMatch failed:', err);
-      // Re-queue both players on failure
-      seekingQueue.set(playerA.googleId, playerA);
-      seekingQueue.set(playerB.googleId, playerB);
-      io.emit('queue:count', seekingQueue.size);
+      queue.set(playerA.googleId, playerA);
+      queue.set(playerB.googleId, playerB);
+      io.emit('queue:count', ratedQueue.size + unratedQueue.size);
       return;
     }
 
-    // Emit to each player's socket by socket ID
     io.to(playerA.socketId).emit('queue:matched', { roomCode });
     io.to(playerB.socketId).emit('queue:matched', { roomCode });
   });
 
   socket.on('queue:leave', () => {
-    seekingQueue.delete(googleId);
-    io.emit('queue:count', seekingQueue.size);
+    ratedQueue.delete(googleId);
+    unratedQueue.delete(googleId);
+    io.emit('queue:count', ratedQueue.size + unratedQueue.size);
   });
 }
 

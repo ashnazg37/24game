@@ -13,15 +13,17 @@ const authRoutes    = require('./routes/auth');
 const playerRoutes  = require('./routes/players');
 const configRoutes  = require('./routes/config');
 const roomRoutes    = require('./routes/rooms');
-const { verifySocketJWT }  = require('./middleware/auth');
-const { registerMatchmaking } = require('./sockets/matchmaking');
+const { verifySocketJWT }          = require('./middleware/auth');
+const { registerMatchmaking }      = require('./sockets/matchmaking');
 const { registerLobby, handleLobbyDisconnect } = require('./sockets/lobby');
+const { registerGame, handleGameDisconnect }   = require('./sockets/game');
 
 const app    = express();
 const server = http.createServer(app);
 
-// In-memory matchmaking queue: Map<googleId, playerData>
-const seekingQueue = new Map();
+// Separate queues so rated and unrated players only match each other
+const ratedQueue   = new Map();
+const unratedQueue = new Map();
 
 // ── SOCKET.IO ─────────────────────────────────────────────────────────────────
 const io = new Server(server, {
@@ -36,23 +38,32 @@ io.use(verifySocketJWT);
 io.on('connection', (socket) => {
   console.log(`[socket] connected  id=${socket.id} user=${socket.user?.googleId}`);
 
-  // Send current queue size on connect so dashboards can show live count
-  socket.emit('queue:count', seekingQueue.size);
+  socket.emit('queue:count', ratedQueue.size + unratedQueue.size);
 
-  registerMatchmaking(socket, io, seekingQueue);
+  registerMatchmaking(socket, io, ratedQueue, unratedQueue);
   registerLobby(socket, io);
+  registerGame(socket, io);
 
   socket.on('disconnect', async (reason) => {
     console.log(`[socket] disconnected id=${socket.id} reason=${reason}`);
 
-    // Remove from matchmaking queue if seeking
-    if (seekingQueue.has(socket.user.googleId)) {
-      seekingQueue.delete(socket.user.googleId);
-      io.emit('queue:count', seekingQueue.size);
+    const { googleId } = socket.user;
+
+    // Snapshot room codes before socket.rooms is potentially cleared
+    const gameRooms = [...socket.rooms].filter(r => r !== socket.id);
+
+    // Remove from matchmaking queues
+    if (ratedQueue.has(googleId) || unratedQueue.has(googleId)) {
+      ratedQueue.delete(googleId);
+      unratedQueue.delete(googleId);
+      io.emit('queue:count', ratedQueue.size + unratedQueue.size);
     }
 
-    // Update lobby presence for any rooms this socket was in
+    // Mark offline in any rooms (lobby + game pages)
     await handleLobbyDisconnect(socket, io);
+
+    // Handle 1v1 game abandonment if the disconnected player was mid-game
+    await handleGameDisconnect(socket, io, gameRooms);
   });
 });
 

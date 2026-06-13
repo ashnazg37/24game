@@ -53,10 +53,11 @@ document.getElementById('create-btn').addEventListener('click', async () => {
   const skipMode    = document.getElementById('skip-mode').value;
 
   try {
+    const isRated = document.getElementById('rated-room').checked;
     const res = await fetch('/api/rooms', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body:    JSON.stringify({ totalRounds, skipMode })
+      body:    JSON.stringify({ totalRounds, skipMode, isRated })
     });
     const data = await res.json();
     if (!res.ok) { showError(data.error || 'Could not create room'); return; }
@@ -106,8 +107,9 @@ function showSearching(on) {
 }
 
 function startSeek() {
+  const isRated = document.getElementById('rated-1v1').checked;
   showSearching(true);
-  socket.emit('queue:join');
+  socket.emit('queue:join', { isRated });
 }
 
 function cancelSeek() {

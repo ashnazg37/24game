@@ -35,8 +35,7 @@
     <div class="nav-user">
       <img id="user-photo" src="" alt="" onerror="this.style.display='none'">
       <span id="user-name"></span>
-      <button id="theme-btn" onclick="import('./utils.js').then(m=>m.toggleTheme())" title="Toggle theme">☀</button>
-      <button id="sign-out-btn" class="btn btn-ghost">Sign out</button>
+<button id="sign-out-btn" class="btn btn-ghost">Sign out</button>
     </div>
   </nav>
 
@@ -55,6 +54,10 @@
         </p>
 
         <div id="idle-state">
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:0.85rem;color:var(--muted);cursor:pointer;">
+            <input type="checkbox" id="rated-1v1" checked style="accent-color:var(--accent);width:16px;height:16px;">
+            Rated match
+          </label>
           <button id="find-btn" class="btn btn-primary">Find Opponent</button>
           <button id="copy-invite-btn" class="btn btn-secondary" style="margin-top:8px;">Copy invite link</button>
         </div>
@@ -86,6 +89,10 @@
             </select>
           </div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:0.85rem;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="rated-room" checked style="accent-color:var(--accent);width:16px;height:16px;">
+          Rated room
+        </label>
         <button id="create-btn" class="btn btn-primary">Create Room</button>
         <button id="copy-room-link-btn" class="btn btn-secondary" style="margin-top:8px;">Copy room link</button>
       </div>
