@@ -8,7 +8,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
+  <style>
+    .tab-bar { display:flex; gap:4px; margin-bottom:20px; }
+    .tab-btn {
+      flex:1; padding:9px; border:1px solid var(--border); border-radius:var(--radius-sm);
+      background:transparent; color:var(--muted); font-family:var(--font-mono); font-size:0.82rem;
+      cursor:pointer; transition:background 0.15s,color 0.15s,border-color 0.15s;
+    }
+    .tab-btn.active {
+      background:var(--accent-dim); color:var(--accent); border-color:rgba(129,140,248,0.4);
+    }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -18,33 +30,57 @@
 
   <div class="container" style="max-width:680px;padding-top:32px;">
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <h1 class="card-title" style="margin-bottom:0;">Global Leaderboard</h1>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <h1 class="card-title" style="margin-bottom:0;">Leaderboard</h1>
         <button id="refresh-btn" class="btn btn-secondary" style="width:auto;padding:8px 18px;font-size:0.85rem;">
           Refresh
         </button>
       </div>
 
-      <p id="loading" style="color:var(--muted);text-align:center;padding:32px;">Loading…</p>
-      <p id="empty"   style="display:none;color:var(--muted);text-align:center;padding:32px;">No games played yet.</p>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="competitive">Competitive</button>
+        <button class="tab-btn" data-tab="practice">Practice</button>
+      </div>
 
-      <table class="lb-table" id="lb-table" style="display:none;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th style="text-align:right;">ELO</th>
-            <th style="text-align:right;">Wins</th>
-            <th style="text-align:right;">Played</th>
-            <th style="text-align:right;">Win %</th>
-          </tr>
-        </thead>
-        <tbody id="lb-body"></tbody>
-      </table>
+      <!-- Competitive tab -->
+      <div class="tab-panel active" id="tab-competitive">
+        <p id="loading-comp" style="color:var(--muted);text-align:center;padding:32px;">Loading…</p>
+        <p id="empty-comp"   style="display:none;color:var(--muted);text-align:center;padding:32px;">No games played yet.</p>
+        <table class="lb-table" id="lb-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th style="text-align:right;">ELO</th>
+              <th style="text-align:right;">Wins</th>
+              <th style="text-align:right;">Played</th>
+              <th style="text-align:right;">Win %</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Practice tab -->
+      <div class="tab-panel" id="tab-practice">
+        <p id="loading-prac" style="color:var(--muted);text-align:center;padding:32px;">Loading…</p>
+        <p id="empty-prac"   style="display:none;color:var(--muted);text-align:center;padding:32px;">No practice scores yet.</p>
+        <table class="lb-table" id="prac-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th style="text-align:right;">Best Time</th>
+              <th style="text-align:right;">Best Streak</th>
+            </tr>
+          </thead>
+          <tbody id="prac-body"></tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 
   <script type="module" src="leaderboard.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>
