@@ -10,7 +10,7 @@ router.get('/', verifyJWT, async (req, res) => {
     const players = await User
       .find({ roundsPlayed: { $gt: 0 } })
       .sort({ rating: -1 })
-      .select('googleId displayName photoURL rating wins roundsPlayed practiceStats')
+      .select('googleId username displayName photoURL rating wins roundsPlayed practiceStats')
       .lean();
     res.json({ players });
   } catch (err) {
@@ -24,7 +24,7 @@ router.get('/me', verifyJWT, async (req, res) => {
   try {
     const user = await User
       .findById(req.user.userId)
-      .select('googleId displayName photoURL rating wins roundsPlayed practiceStats')
+      .select('googleId username displayName photoURL rating wins roundsPlayed practiceStats')
       .lean();
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ user });
@@ -70,7 +70,7 @@ router.get('/practice', verifyJWT, async (req, res) => {
     const players = await User
       .find({ 'practiceStats.bestTimeMs': { $ne: null } })
       .sort({ 'practiceStats.bestTimeMs': 1 })
-      .select('googleId displayName photoURL practiceStats')
+      .select('googleId username displayName photoURL practiceStats')
       .lean();
     res.json({ players });
   } catch (err) {

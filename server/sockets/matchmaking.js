@@ -35,7 +35,7 @@ async function createMatch(playerA, playerB, isRated = true) {
     settings: { totalRounds: 3, skipMode: 'unanimous' },
     players: {
       [playerA.googleId]: {
-        displayName:  playerA.displayName,
+        displayName:  playerA.username || playerA.displayName,
         photoURL:     playerA.photoURL || '',
         roomScore:    0,
         rating:       playerA.rating,
@@ -43,7 +43,7 @@ async function createMatch(playerA, playerB, isRated = true) {
         roundsPlayed: 0
       },
       [playerB.googleId]: {
-        displayName:  playerB.displayName,
+        displayName:  playerB.username || playerB.displayName,
         photoURL:     playerB.photoURL || '',
         roomScore:    0,
         rating:       playerB.rating,
@@ -83,6 +83,7 @@ function registerMatchmaking(socket, io, ratedQueue, unratedQueue) {
     queue.set(googleId, {
       googleId,
       userId,
+      username:    user.username || null,
       displayName: user.displayName,
       photoURL:    user.photoURL || '',
       rating:      user.rating,

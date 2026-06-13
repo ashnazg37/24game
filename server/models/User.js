@@ -3,6 +3,16 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema(
   {
     googleId:     { type: String, required: true, unique: true, index: true },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,    // allows multiple null/undefined while enforcing uniqueness for non-null
+      minlength: 3,
+      maxlength: 20,
+      match: /^[a-z0-9_-]+$/,
+      trim: true,
+      lowercase: true
+    },
     displayName:  { type: String, required: true },
     photoURL:     { type: String, default: '' },
     rating:       { type: Number, default: 1200 },

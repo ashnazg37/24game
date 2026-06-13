@@ -34,3 +34,19 @@ export function requireAuth() {
   }
   return session;
 }
+
+// Like requireAuth, but also redirects to username.html if user has no username yet.
+// Returns the session object if authenticated and username is set.
+export function requireUsername() {
+  const session = getSession();
+  if (!session) {
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    window.location.href = 'index.html';
+    return null;
+  }
+  if (!session.user.username) {
+    window.location.href = 'username.html';
+    return null;
+  }
+  return session;
+}

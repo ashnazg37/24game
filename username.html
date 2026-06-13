@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24 — Choose Username</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body class="page-center">
+  <div class="landing-card" style="max-width:480px;">
+    <h1 style="font-family:var(--font-display);font-size:2.5rem;letter-spacing:0.04em;margin-bottom:10px;">Choose a Username</h1>
+    <p style="color:var(--muted);font-size:0.92rem;margin-bottom:28px;">Pick a unique name. 3–20 characters: letters, numbers, _ or -</p>
+    <input
+      id="username-input"
+      type="text"
+      placeholder="e.g. player_one"
+      autocomplete="off"
+      autocapitalize="none"
+      spellcheck="false"
+      style="font-family:var(--font-mono);font-size:1.1rem;margin-bottom:10px;"
+    >
+    <p id="username-status" style="font-size:0.88rem;min-height:1.4em;margin-bottom:20px;"></p>
+    <button id="confirm-btn" class="btn btn-primary" disabled style="width:100%;max-width:280px;margin:0 auto;display:block;">Confirm</button>
+    <p style="margin-top:20px;font-size:0.84rem;">
+      <a href="index.html" style="color:var(--muted);text-decoration:none;">Sign out instead</a>
+    </p>
+  </div>
+  <script type="module" src="username.js"></script>
+</body>
+</html>

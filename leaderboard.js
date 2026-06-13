@@ -1,6 +1,6 @@
-import { requireAuth } from './session.js';
+import { requireUsername } from './session.js';
 
-const session = requireAuth();
+const session = requireUsername();
 if (!session) throw new Error('redirecting');
 
 const { token, user } = session;
@@ -59,7 +59,7 @@ async function loadCompetitive() {
       <td class="lb-rank">${i + 1}</td>
       <td><div class="lb-name">
         <img src="${p.photoURL || ''}" onerror="this.style.display='none'">
-        ${p.displayName}${you ? ' (you)' : ''}
+        @${p.username || p.displayName}${you ? ' (you)' : ''}
       </div></td>
       <td class="lb-rating">${p.rating ?? 1200}</td>
       <td class="lb-stat">${p.wins ?? 0}</td>
@@ -107,7 +107,7 @@ async function loadPractice() {
       <td class="lb-rank">${i + 1}</td>
       <td><div class="lb-name">
         <img src="${p.photoURL || ''}" onerror="this.style.display='none'">
-        ${p.displayName}${you ? ' (you)' : ''}
+        @${p.username || p.displayName}${you ? ' (you)' : ''}
       </div></td>
       <td class="lb-rating">${bestSec}</td>
       <td class="lb-stat">${streak}</td>

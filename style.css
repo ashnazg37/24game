@@ -439,9 +439,6 @@ select option { background:#0d1029; color:var(--text); }
   .stat-value     { font-size: 1.4rem; }
   .feedback       { margin-bottom: 8px; min-height: 36px; font-size: 0.84rem; padding: 8px 10px; }
 
-  /* Compact card grid on practice page so the full UI fits ≥ 375 px viewport */
-  .practice-wrap #card-grid { grid-template-rows: 108px 108px !important; }
-
   /* End-screen buttons stack on narrow screens */
   .end-buttons { flex-direction: column; }
 
@@ -455,7 +452,6 @@ select option { background:#0d1029; color:var(--text); }
   .room-code    { font-size: 1.5rem; letter-spacing: 0.10em; }
   .landing-logo { font-size: 6rem; }
   .timer-seconds { font-size: 3rem; }
-  .practice-wrap #card-grid { grid-template-rows: 96px 96px !important; }
 }
 
 
@@ -501,13 +497,13 @@ select option { background:#0d1029; color:var(--text); }
   /* Tighten game card */
   .game-layout > .card { padding: 12px; }
 
+  /* Number cards slightly larger on mobile */
+  #card-grid > div { font-size: 3.2rem !important; }
+
   /* Compact result view */
   .result-center { padding: 10px 0; }
   .result-winner { font-size: 1.6rem; }
   .result-solution { font-size: 1rem; padding: 7px 14px; }
-
-  /* Compact game card grid (fits 375 px without nav overflow) */
-  .game-layout #card-grid { grid-template-rows: 120px 120px !important; }
 
   /* Reduce card-hint margin */
   .game-layout #card-grid ~ * { font-size: 0.8rem; }
@@ -519,4 +515,69 @@ select option { background:#0d1029; color:var(--text); }
   #room-code-nav { font-size: 0.72rem; letter-spacing: 0.06em; }
   .nav-user img  { width: 28px; height: 28px; }
   .nav-user span { display: none; } /* hide username text, keep avatar */
+}
+
+
+/* ── SCROLL-FREE: game + practice pages ── */
+body.no-scroll {
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Default card grid row heights (overridden by flex fill in no-scroll context) */
+#card-grid { grid-template-rows: 140px 140px; }
+
+/* Practice page: make card grid fill remaining space below stats/timer */
+body.no-scroll .practice-wrap {
+  flex: 1;
+  min-height: 0;
+}
+body.no-scroll #game-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+body.no-scroll #game-screen #card-grid {
+  flex: 1;
+  min-height: 60px;
+  max-height: 300px;
+  grid-template-rows: 1fr 1fr;
+  margin-bottom: 6px;
+}
+
+/* Game page: fill remaining height below navbar */
+body.no-scroll .game-layout {
+  flex: 1;
+  min-height: 0;
+}
+
+/* On mobile, game-layout is single-column — game card fills remaining */
+@media (max-width: 680px) {
+  body.no-scroll .game-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  body.no-scroll .game-sidebar { flex-shrink: 0; }
+  body.no-scroll .game-layout > .card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body.no-scroll #round-view {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body.no-scroll #round-view #card-grid {
+    flex: 1;
+    min-height: 80px;
+    max-height: 280px;
+    grid-template-rows: 1fr 1fr;
+    margin-bottom: 6px;
+  }
 }

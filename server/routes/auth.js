@@ -2,6 +2,7 @@ const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyJWT } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -63,6 +64,8 @@ router.post('/google', async (req, res) => {
     token,
     user: {
       googleId:    user.googleId,
+      username:    user.username || null,
+      hasUsername: !!user.username,
       displayName: user.displayName,
       photoURL:    user.photoURL,
       rating:      user.rating,
@@ -127,6 +130,8 @@ router.post('/google-redirect', express.urlencoded({ extended: false }), async (
     token,
     user: {
       googleId:     user.googleId,
+      username:     user.username || null,
+      hasUsername:  !!user.username,
       displayName:  user.displayName,
       photoURL:     user.photoURL,
       rating:       user.rating,
@@ -144,11 +149,63 @@ router.post('/google-redirect', express.urlencoded({ extended: false }), async (
 const d = JSON.parse(atob('${sessionPayload}'));
 localStorage.setItem('24game_token', d.token);
 localStorage.setItem('24game_user', JSON.stringify(d.user));
-const redirect = sessionStorage.getItem('redirectAfterLogin');
-sessionStorage.removeItem('redirectAfterLogin');
-window.location.replace(redirect && redirect.startsWith('/') ? redirect : '/dashboard.html');
+if (!d.user.hasUsername) {
+  window.location.replace('/username.html');
+} else {
+  const redirect = sessionStorage.getItem('redirectAfterLogin');
+  sessionStorage.removeItem('redirectAfterLogin');
+  window.location.replace(redirect && redirect.startsWith('/') ? redirect : '/dashboard.html');
+}
 </script>
 </body></html>`);
+});
+
+// PATCH /api/auth/username — set username for the first time
+router.patch('/username', verifyJWT, async (req, res) => {
+  const { username } = req.body;
+  if (!username || typeof username !== 'string') {
+    return res.status(400).json({ error: 'Missing username' });
+  }
+  const normalized = username.toLowerCase().trim();
+  if (!/^[a-z0-9_-]{3,20}$/.test(normalized)) {
+    return res.status(400).json({ error: 'Username must be 3-20 chars: letters, numbers, _ or -' });
+  }
+
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.username) {
+      return res.status(409).json({ error: 'Username already set' });
+    }
+
+    const taken = await User.findOne({ username: normalized });
+    if (taken) {
+      return res.status(409).json({ error: 'Username taken' });
+    }
+
+    user.username = normalized;
+    await user.save();
+    return res.json({ username: user.username });
+  } catch (err) {
+    console.error('PATCH /api/auth/username error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// GET /api/auth/check-username/:name — check if a username is available
+router.get('/check-username/:name', verifyJWT, async (req, res) => {
+  const name = req.params.name.toLowerCase().trim();
+  if (!/^[a-z0-9_-]{3,20}$/.test(name)) {
+    return res.status(400).json({ error: 'Invalid username format' });
+  }
+  try {
+    const taken = await User.findOne({ username: name }).lean();
+    return res.json({ available: !taken });
+  } catch (err) {
+    console.error('GET /api/auth/check-username error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;

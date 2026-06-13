@@ -53,7 +53,7 @@ router.post('/', verifyJWT, async (req, res) => {
     settings: { totalRounds, skipMode },
     players: {
       [user.googleId]: {
-        displayName:  user.displayName,
+        displayName:  user.username || user.displayName,
         photoURL:     user.photoURL || '',
         roomScore:    0,
         rating:       user.rating,
@@ -80,7 +80,7 @@ router.post('/:code/join', verifyJWT, async (req, res) => {
   if (!user) return res.status(401).json({ error: 'User not found' });
 
   room.players.set(req.user.googleId, {
-    displayName:  user.displayName,
+    displayName:  user.username || user.displayName,
     photoURL:     user.photoURL || '',
     roomScore:    0,
     rating:       user.rating,

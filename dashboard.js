@@ -1,12 +1,12 @@
-import { requireAuth, clearSession } from './session.js';
+import { requireUsername, clearSession } from './session.js';
 import { copyText } from './utils.js';
 
-const session = requireAuth();
+const session = requireUsername();
 if (!session) throw new Error('redirecting');
 
 const { token, user } = session;
 
-document.getElementById('user-name').textContent = user.displayName;
+document.getElementById('user-name').textContent = user.username || user.displayName;
 document.getElementById('user-photo').src         = user.photoURL || '';
 
 // ── SOCKET.IO ─────────────────────────────────────────────────────────────────

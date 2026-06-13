@@ -1,15 +1,15 @@
-import { requireAuth } from './session.js';
+import { requireUsername } from './session.js';
 import { copyText } from './utils.js';
 
 const roomCode = new URLSearchParams(window.location.search).get('room');
 if (!roomCode) window.location.href = 'dashboard.html';
 
-const session = requireAuth();
+const session = requireUsername();
 if (!session) throw new Error('redirecting');
 
 const { token, user } = session;
 
-document.getElementById('user-name').textContent         = user.displayName;
+document.getElementById('user-name').textContent         = user.username || user.displayName;
 document.getElementById('user-photo').src                = user.photoURL || '';
 document.getElementById('room-code-display').textContent = roomCode;
 

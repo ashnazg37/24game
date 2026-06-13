@@ -122,7 +122,7 @@ function renderCards() {
   }
 
   grid.style.cssText =
-    'display:grid;grid-template-columns:1fr 1fr;grid-template-rows:140px 140px;' +
+    'display:grid;grid-template-columns:1fr 1fr;' +
     'gap:10px;width:100%;margin-bottom:12px;';
   grid.innerHTML = '';
 
