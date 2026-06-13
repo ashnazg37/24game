@@ -1,7 +1,7 @@
 const Room = require('../models/Room');
 const User = require('../models/User');
 const { validateExpression }     = require('../game/validator');
-const { getRandomSolvablePuzzle } = require('../game/solver');
+const { getRandomSolvablePuzzle, getSolution } = require('../game/solver');
 const { calculateElo }           = require('../game/elo');
 const { serializeRoom }          = require('../game/serialize');
 
@@ -56,7 +56,7 @@ async function advanceToNextRound(room, io) {
 function scheduleNextRound(roomCode, io) {
   const existing = advanceTimers.get(roomCode);
   if (existing) clearTimeout(existing);
-  const handle = setTimeout(async () => {
+  const handle = setTimeout(async () => { // 5 s — long enough to read the solution
     advanceTimers.delete(roomCode);
     try {
       const room = await Room.findOne({ roomCode });
@@ -64,7 +64,7 @@ function scheduleNextRound(roomCode, io) {
     } catch (err) {
       console.error('[game] scheduleNextRound error:', err);
     }
-  }, 3000);
+  }, 5000);
   advanceTimers.set(roomCode, handle);
 }
 
@@ -225,9 +225,11 @@ function registerGame(socket, io) {
       : Object.keys(newRound.skipVotes || {}).length;
 
     if (votes >= needed) {
+      // Compute solution so the client can display it on the result screen
+      const solution = getSolution([...afterVote.rounds[roundIdx].numbers]);
       const afterSkip = await Room.findOneAndUpdate(
         { roomCode, [`rounds.${roundIdx}.status`]: 'active' },
-        { $set: { [`rounds.${roundIdx}.status`]: 'skipped' } },
+        { $set: { [`rounds.${roundIdx}.status`]: 'skipped', [`rounds.${roundIdx}.solution`]: solution } },
         { new: true }
       );
       const finalRoom = afterSkip || afterVote;

@@ -101,9 +101,9 @@ function paint(left, total) {
 function onTimeout() {
   streak = 0;
   const answer = puzzleSolution ? ` Answer: ${puzzleSolution}` : '';
-  showFeedback(`⏱ Time's up!${answer}`, 'timeout');
+  showFeedback(`Time's up!${answer}`, 'timeout');
   updateStats();
-  setTimeout(nextPuzzle, 2200);
+  setTimeout(nextPuzzle, 5000);
 }
 
 // ── CARD RENDERING ────────────────────────────────────────────
@@ -224,10 +224,10 @@ function checkWin(card) {
     const newTimePR   = (serverBestMs === null || ms < serverBestMs);
     const newStreakPR = (streak > serverBestStreak);
 
-    let msg = `✓ Solved in ${(ms / 1000).toFixed(1)}s`;
-    if (newTimePR && newStreakPR)   msg += ' 🏆 New time & streak records!';
-    else if (newTimePR)             msg += ' 🏆 New best time!';
-    else if (newStreakPR)           msg += ` 🔥 Streak record: ${streak}!`;
+    let msg = `Solved in ${(ms / 1000).toFixed(1)}s`;
+    if (newTimePR && newStreakPR)   msg += ' — New time & streak record!';
+    else if (newTimePR)             msg += ' — New best time!';
+    else if (newStreakPR)           msg += ` — Streak record: ${streak}!`;
 
     showFeedback(msg, 'correct');
     updateStats();
@@ -241,7 +241,7 @@ function checkWin(card) {
     setTimeout(nextPuzzle, 1600);
   } else {
     renderCards();
-    showErr(`Result is ${fmt(card.value)}, not 24 — ↩ Undo`);
+    showErr(`Result is ${fmt(card.value)}, not 24 — tap Undo`);
   }
 }
 
@@ -258,7 +258,7 @@ document.getElementById('skip-btn').addEventListener('click', () => {
   const answer = puzzleSolution ? ` Answer: ${puzzleSolution}` : '';
   showFeedback(`Skipped.${answer}`, 'wrong');
   updateStats();
-  setTimeout(nextPuzzle, 2200);
+  setTimeout(nextPuzzle, 5000);
 });
 
 // ── STATS ─────────────────────────────────────────────────────

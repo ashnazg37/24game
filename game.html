@@ -23,7 +23,7 @@
   <div class="game-layout">
 
     <!-- MAIN GAME CARD -->
-    <div class="card" style="padding:20px;">
+    <div class="card" style="padding:12px 16px;">
 
       <!-- View 1: Active round -->
       <div id="round-view">
@@ -31,7 +31,7 @@
         <div id="card-grid"></div>
         <p class="error-msg" id="input-error"></p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-          <button id="undo-btn" class="btn btn-secondary">↩ Undo</button>
+          <button id="undo-btn" class="btn btn-secondary">Undo</button>
           <button id="skip-btn" class="btn btn-secondary">
             Skip (<span id="skip-count">0</span>/<span id="skip-needed">?</span>)
           </button>
@@ -60,7 +60,7 @@
     </div>
 
     <!-- SIDEBAR -->
-    <div>
+    <div class="game-sidebar">
       <p class="sidebar-title">This Game</p>
       <ul class="player-list" id="room-leaderboard" style="margin-bottom:20px;"></ul>
 

@@ -8,31 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <style>
-    .practice-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 20px; max-width:480px; margin:0 auto; }
-    .timer-block { width:100%; margin-bottom:24px; }
-    .timer-numbers { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-bottom:12px; }
-    .timer-seconds { font-family:var(--font-display); font-size:5.5rem; line-height:1; transition:color 0.4s; text-shadow:0 0 30px var(--accent-glow); }
-    .timer-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); }
-    .timer-track { width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
-    .timer-fill  { height:100%; border-radius:2px; transition:width 0.95s linear, background-color 0.4s; background:var(--accent); box-shadow:0 0 12px var(--accent-glow); }
-    .stats-row   { display:flex; width:100%; margin-bottom:24px; background:var(--surface); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
-    .stat-box    { flex:1; text-align:center; padding:14px 6px; border-right:1px solid var(--border); }
-    .stat-box:last-child { border-right:none; }
-    .stat-value  { font-family:var(--font-display); font-size:1.7rem; color:var(--cyan); line-height:1; margin-bottom:3px; text-shadow:0 0 14px var(--cyan-glow); }
-    .stat-name   { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.10em; color:var(--muted); }
-    .feedback    { width:100%; text-align:center; padding:11px; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:0.95rem; margin-bottom:16px; min-height:44px; transition:opacity 0.3s; }
-    .feedback.correct { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(129,140,248,0.35); box-shadow:0 0 20px rgba(129,140,248,0.12); }
-    .feedback.wrong   { background:rgba(248,113,113,0.08); color:var(--danger); border:1px solid rgba(248,113,113,0.25); }
-    .feedback.timeout { background:rgba(251,191,36,0.08); color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
-    .feedback.hidden  { opacity:0; pointer-events:none; }
-    .time-setting { display:flex; align-items:center; gap:10px; margin-bottom:20px; font-size:0.85rem; color:var(--muted); }
-    .time-setting select { width:auto; padding:6px 10px; font-size:0.85rem; }
-    #start-screen { text-align:center; padding:16px 0; }
-    #start-screen h2 { font-family:var(--font-display); font-size:2.5rem; margin-bottom:6px; background:linear-gradient(135deg,#818cf8,#c4b5fd 50%,#67e8f9); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    #start-screen p  { color:var(--muted); margin-bottom:24px; font-size:0.88rem; }
-  </style>
-  <script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"dark";</script>
 </head>
 <body>
   <nav class="navbar">
@@ -78,13 +53,12 @@
 
       <div class="feedback hidden" id="feedback"></div>
 
-      <p id="expr-display" style="font-family:'Space Mono',monospace;font-size:0.95rem;color:var(--accent);text-align:center;min-height:1.4em;margin-bottom:6px;letter-spacing:0.03em;word-break:break-all;"></p>
       <p id="card-hint" style="text-align:center;font-size:0.82rem;color:var(--muted);margin-bottom:8px;min-height:1.2em;">Pick a number</p>
       <div id="card-grid"></div>
       <p class="error-msg" id="input-error"></p>
 
       <div style="display:flex;gap:12px;margin-top:12px;">
-        <button id="undo-btn" class="btn btn-secondary" style="flex:1;">↩ Undo</button>
+        <button id="undo-btn" class="btn btn-secondary" style="flex:1;">Undo</button>
         <button id="skip-btn" class="btn btn-secondary" style="flex:1;">Skip</button>
       </div>
 
@@ -92,6 +66,5 @@
   </div>
 
   <script type="module" src="practice.js"></script>
-  <script type="module">import{initTheme}from"./utils.js";initTheme();</script>
 </body>
 </html>

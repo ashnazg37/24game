@@ -106,10 +106,13 @@ function renderResult(round) {
   advanceDisplayTimer = null;
 
   const el = document.getElementById('result-content');
+  const solHtml = round.solution
+    ? `<code class="result-solution">${round.solution}</code>`
+    : '';
   if (round.status === 'solved')
-    el.innerHTML = `<p class="result-winner">🏆 ${round.winnerName}</p><code class="result-solution">${round.solution}</code>`;
+    el.innerHTML = `<p class="result-winner">${round.winnerName} solved it!</p>${solHtml}`;
   else
-    el.innerHTML = `<p class="result-skipped">Round skipped.</p>`;
+    el.innerHTML = `<p class="result-skipped">Round skipped.</p>${solHtml}`;
 
   const is1v1 = room.meta.gameMode === '1v1';
   document.getElementById('next-round-btn').style.display   = (isHost && !is1v1) ? 'inline-block' : 'none';
@@ -119,12 +122,12 @@ function renderResult(round) {
     // Server auto-advances after 3s — show cosmetic countdown only
     const msg = document.getElementById('auto-advance-msg');
     msg.style.display = 'block';
-    let n = 3;
-    msg.textContent = `Next round in ${n}s…`;
+    let n = 5;
+    msg.textContent = `Next round in ${n}s`;
     advanceDisplayTimer = setInterval(() => {
       n--;
       if (n <= 0) { clearInterval(advanceDisplayTimer); advanceDisplayTimer = null; return; }
-      msg.textContent = `Next round in ${n}s…`;
+      msg.textContent = `Next round in ${n}s`;
     }, 1000);
   }
 }
@@ -269,7 +272,7 @@ function combine(bIdx) {
 
 function checkWin(card) {
   if (Math.abs(card.value - 24) < 1e-9) autoSubmit(card.expr);
-  else { renderCards(); showInputError(`Result is ${fmt(card.value)}, not 24 — ↩ undo`); }
+  else { renderCards(); showInputError(`Result is ${fmt(card.value)}, not 24 — tap Undo`); }
 }
 
 document.getElementById('undo-btn').addEventListener('click', () => {
